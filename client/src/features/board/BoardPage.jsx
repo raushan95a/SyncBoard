@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import toast from 'react-hot-toast';
@@ -11,9 +11,13 @@ import { Avatar } from '../../components/ui/Avatar.jsx';
 import { EditableText, InlineAdd } from '../../components/ui/InlineForm.jsx';
 import { renameBoard, createList, moveList, moveCard, messageFor } from './thunks.js';
 import {
-  selectBoardStatus, selectBoardError, selectGone, selectConnection, selectMeta, selectMyRole, selectListOrder, selectCardIds,
-  selectPresence,
+  selectBoardStatus, selectBoardError, selectGone, selectConnection, selectMeta, selectMyRole, selectListOrder,
+  selectPresence, makeSelectVisibleCardIds,
 } from './selectors.js';
+import { filtersChanged } from './boardSlice.js';
+import { parseFilters, writeFilters } from './filters.js';
+import { FilterBar } from './FilterBar.jsx';
+import { countRender } from './perf.js';
 import { useBoardSocket } from './useBoardSocket.js';
 import { ListColumn } from './ListColumn.jsx';
 import { MembersDialog, LabelsEditor, ArchivePanel } from './BoardDialogs.jsx';
@@ -80,6 +84,7 @@ function PresenceBar() {
 }
 
 function BoardView({ boardId, pauseDrag, resumeDrag }) {
+  countRender('BoardView');
   const dispatch = useDispatch();
   const store = useStore();
   const navigate = useNavigate();
@@ -90,6 +95,14 @@ function BoardView({ boardId, pauseDrag, resumeDrag }) {
   const editable = canEdit(myRole);
   const canDrag = editable && online;
   const [dialog, setDialog] = useState(null);       // 'members' | 'labels' | 'archive'
+
+  // The URL is the source of truth for filters; mirror it into the store for the selectors.
+  const [params] = useSearchParams();
+  useEffect(() => {
+    const filters = parseFilters(params);
+    const qs = writeFilters(new URLSearchParams(), filters).toString();
+    dispatch(filtersChanged({ filters, query: qs ? `?${qs}` : '' }));
+  }, [params, dispatch]);
   const closeDialog = useCallback(() => setDialog(null), []);
   const isOwner = canManageBoard(myRole);
 
@@ -106,8 +119,10 @@ function BoardView({ boardId, pauseDrag, resumeDrag }) {
   };
 
   /**
-   * Neighbors come from what the user SAW: the rendered ids with the dragged item removed
-   * (docs/05 — Drag and Drop). Dropping back in place is a no-op and never reaches the server.
+   * Neighbors come from what the user SAW: the rendered (filtered) ids with the dragged item
+   * removed (docs/05 — Drag and Drop). With a filter active, hidden cards may sit between the
+   * visible neighbors; the server places the card directly after `before` (ADR-014).
+   * Dropping back in place is a no-op and never reaches the server.
    */
   const drop = useCallback(({ source, destination, draggableId, type }) => {
     if (!destination) return;
@@ -121,7 +136,7 @@ function BoardView({ boardId, pauseDrag, resumeDrag }) {
       dispatch(moveList({ listId: draggableId, ...neighbors(selectListOrder(state)) }));
     } else {
       const toListId = destination.droppableId;
-      dispatch(moveCard({ cardId: draggableId, toListId, ...neighbors(selectCardIds(state, toListId)) }));
+      dispatch(moveCard({ cardId: draggableId, toListId, ...neighbors(makeSelectVisibleCardIds()(state, toListId)) }));
     }
   }, [dispatch, store]);
 
@@ -150,6 +165,7 @@ function BoardView({ boardId, pauseDrag, resumeDrag }) {
         </nav>
       </AppHeader>
       <ConnectionBanner />
+      <FilterBar />
 
       <DragDropContext onDragStart={pauseDrag} onDragEnd={onDragEnd}>
         <Droppable droppableId="board" type="LIST" direction="horizontal">

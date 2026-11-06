@@ -264,12 +264,12 @@ Keep the filter state in the URL query string, so a filtered view can be shared.
 
 ## Performance Checklist
 
-- [ ] `CardItem = React.memo(...)` receives only `cardId` and `index`, and selects its own card.
-- [ ] `ListColumn` selects `selectVisibleCardIds(listId)` (memoized per list), so it doesn't re-render because of other lists.
-- [ ] No component selects the whole `board` slice.
-- [ ] Reducers keep the **same array reference** for `cardIdsByList[x]` when list x didn't change. A rebase replays only the affected entity.
-- [ ] No inline object or array props to memoized children.
-- [ ] Render-count test: moving one card re-renders exactly three components.
+- [x] `CardItem = React.memo(...)` receives only `cardId` and `index`, and selects its own card.
+- [x] `ListColumn` selects `selectVisibleCardIds(listId)` (memoized per list), so it doesn't re-render because of other lists.
+- [x] No component selects the whole `board` slice.
+- [x] Reducers keep the **same array reference** for `cardIdsByList[x]` when list x didn't change. A rebase replays only the affected entity.
+- [x] No inline object or array props to memoized children.
+- [x] Render-count test: moving one card re-renders exactly three components.
 - [ ] Virtualize only if a list has more than 200 cards (measure first).
 
 ## Routing

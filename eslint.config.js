@@ -17,7 +17,7 @@ export default [
     },
   },
   {
-    files: ['server/**/*.js', 'shared/**/*.js', '*.config.js', '**/vite.config.js', '**/vitest.config.js'],
+    files: ['server/**/*.js', 'shared/**/*.js', 'client/scripts/**/*.js', '*.config.js', '**/vite.config.js', '**/vitest.config.js'],
     languageOptions: { globals: globals.node },
   },
   {

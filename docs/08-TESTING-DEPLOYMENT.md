@@ -104,6 +104,31 @@ test('card move syncs between users', async ({ browser }) => {
 
 Use Artillery with the Socket.io engine: 50 clients join one board while 10 moves per second hit the REST API. Measure p95 from the REST request to the event arriving on other clients, plus server CPU. Seed a 2,000-card board and time `GET /boards/:id`. **Put the numbers in the README.**
 
+### Measured (Phase 7, 2026-11-06)
+
+Seed: `npm run seed -w server` (1 board × 5 lists × 500 cards = 2,500 cards; remove with `-- --drop`).
+Server numbers go through the real services, transactions included, against Atlas M0 (`collabboard-dev`) from a home
+connection, so they are dominated by network round trips and vary a lot between runs:
+
+| Measure | Run 1 | Run 2 |
+|---------|-------|-------|
+| Snapshot size (`GET /boards/:id` body) | 982 KB | 982 KB |
+| Snapshot load, median / p95 (10 runs) | 1,688 / 10,985 ms | 480 / 1,169 ms |
+| Card move (neighbor resolution + transaction), median / p95 (20 runs) | 224 / 689 ms | 230 / 468 ms |
+
+Client store work for the same board (`npm run bench -w client`, Node, before React renders):
+
+| Measure | Median |
+|---------|--------|
+| Apply the 2,500-card snapshot | 3.1 ms |
+| Optimistic move (`opStarted`) | 4.1 ms |
+| Echo confirm (`card:moved`) | 2.5 ms |
+| Filter one 500-card column (cold cache) | 0.03 ms |
+
+Rendering: the render-count test asserts that a move re-renders exactly 3 components (source column, destination column,
+moved card). The optimistic move is applied before the request, so drag latency is the ~4 ms store update, not the
+~230 ms server round trip. Still to do: browser timings (first paint of the 2,500-card board) and the Artillery run.
+
 ## Docker
 
 Docker is only needed in Phase 8, for the production image and the multi-instance test. The database is always Atlas, so there's no `mongo` service.

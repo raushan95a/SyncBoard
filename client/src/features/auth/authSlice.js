@@ -55,4 +55,6 @@ export const { loggedOut } = authSlice.actions;
 export default authSlice.reducer;
 
 export const selectUser = (s) => s.auth.user;
+/** Just the id: a stable primitive, so per-card components never re-render for user changes. */
+export const selectUserId = (s) => s.auth.user?._id;
 export const selectAuthStatus = (s) => s.auth.status;

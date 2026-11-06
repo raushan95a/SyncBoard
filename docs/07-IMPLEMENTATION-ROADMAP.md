@@ -92,11 +92,11 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 
 ## Phase 7 — Filters, Performance, Polish (1–2 days) · F15
 
-- [ ] Filter bar (text, members, labels, due), kept in the URL, with dragging working while filtered (visible neighbors)
-- [ ] `React.memo` and memoized per-list selectors; a render-count test (a move re-renders exactly three components)
-- [ ] Seed script: 1 board × 5 lists × 500 cards; record load and drag timings
-- [ ] Skeletons, empty states, confirm dialogs, keyboard drag-and-drop, responsive layout, due-date colors
-- [ ] Optional: an `Activity` collection written inside `mutateBoard`, shown as card history
+- [x] Filter bar (text, members, labels, due), kept in the URL, with dragging working while filtered (visible neighbors)
+- [x] `React.memo` and memoized per-list selectors; a render-count test (a move re-renders exactly three components)
+- [x] Seed script: 1 board × 5 lists × 500 cards; record load and drag timings *(numbers in [08](08-TESTING-DEPLOYMENT.md#measured-phase-7-2026-11-06))*
+- [x] Skeletons, empty states, confirm dialogs, keyboard drag-and-drop, responsive layout, due-date colors
+- [ ] Optional: an `Activity` collection written inside `mutateBoard`, shown as card history *(skipped for now)*
 
 ## Phase 8 — Hardening, E2E, Deploy (2 days)
 

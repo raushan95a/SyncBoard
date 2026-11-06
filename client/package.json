@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "bench": "node scripts/bench.js"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

@@ -255,3 +255,19 @@ h2.card-modal__title { border: 0; background: none; padding: 0; }
 .comment__head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .comment__body { margin: .2rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .btn--xs { padding: .05rem .4rem; font-size: .75rem; }
+
+/* Filters (F15) and polish (Phase 7) */
+.filter-bar { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; padding: .5rem 1rem 0; }
+.filter-bar__text { width: 220px; max-width: 100%; }
+.filter-bar__panel { flex-basis: 100%; display: flex; flex-direction: column; gap: .5rem; padding: .5rem 0; }
+.btn--on { color: var(--fg); background: var(--surface); }
+.list__hidden { margin: 0; }
+.list__empty { padding: .4rem .2rem; list-style: none; }
+.list__head:focus-visible, .list__cards > li:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 8px; }
+.page--board { height: 100dvh; }
+@media (max-width: 640px) {
+  .board__lists { scroll-snap-type: x mandatory; padding: .75rem; }
+  .board__lists > .list { flex-basis: 85vw; scroll-snap-align: start; }
+  .board-menu { margin-left: 0; }
+  .filter-bar__text { width: 100%; }
+}

@@ -4,6 +4,7 @@ import {
   plain, getDisplayed, sortLists, sortCards, recompute, confirmEntity, applyRebalanced, dropCardsOfList,
 } from './engine.js';
 import { applyEvent } from './remote.js';
+import { NO_FILTERS, sameFilters } from './filters.js';
 
 /**
  * Board state (docs/05 — State Model). `lists`, `cards`, and `meta` are the DISPLAYED state:
@@ -36,6 +37,9 @@ const initialState = {
   presence: [],              // [{ id, name, avatarColor }] viewing this board, deduplicated
   editing: {},               // cardId → { [userId]: user } currently editing that card
   lastActor: {},             // cardId → actorId of the latest confirmed content change ("changed by X")
+  // Mirror of the URL's filter params (the URL is the source of truth, docs/05).
+  filters: NO_FILTERS,
+  filtersQuery: '',          // '?q=…' — appended to card links so opening a card keeps the filtered view
 };
 
 const boardSlice = createSlice({
@@ -99,6 +103,12 @@ const boardSlice = createSlice({
       if (state.boardId !== boardId) return;
       state.status = 'gone';
       state.gone = { reason, by };
+    },
+
+    filtersChanged(state, { payload: { filters, query } }) {
+      if (sameFilters(state.filters, filters)) return;
+      state.filters = filters;
+      state.filtersQuery = query;
     },
 
     connectionChanged(state, { payload }) {
@@ -179,7 +189,7 @@ const boardSlice = createSlice({
 });
 
 export const {
-  boardLoading, boardLoadFailed, boardLoaded, remoteEvent, boardGone, connectionChanged, presenceUpdated, editingUpdated,
+  boardLoading, boardLoadFailed, boardLoaded, remoteEvent, boardGone, connectionChanged, presenceUpdated, editingUpdated, filtersChanged,
   opStarted, opSent, opAcked, opFailed, opConfirmed, boardLeft,
 } = boardSlice.actions;
 export default boardSlice.reducer;

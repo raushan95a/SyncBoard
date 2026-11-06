@@ -9,7 +9,8 @@
     "start": "node src/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:check": "node --env-file=.env scripts/db-check.js"
+    "db:check": "node --env-file=.env scripts/db-check.js",
+    "seed": "node --env-file=.env scripts/seed.js"
   },
   "dependencies": {
     "@syncboard/shared": "^0.0.0",

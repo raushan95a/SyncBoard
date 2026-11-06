@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Markdown from 'react-markdown';
 import toast from 'react-hot-toast';
@@ -21,7 +21,8 @@ export function CardModalRoute() {
   const { cardId } = useParams();
   const { editable, boardId } = useOutletContext();
   const navigate = useNavigate();
-  const close = () => navigate(`/b/${boardId}`);
+  const { search } = useLocation();
+  const close = () => navigate(`/b/${boardId}${search}`);
 
   const fromBoard = useSelector((s) => selectCard(s, cardId));
   const [fetched, setFetched] = useState(null);
@@ -34,7 +35,7 @@ export function CardModalRoute() {
     if (seen) {
       // Deleted (by a teammate, or a cascade) while the modal was open (docs/05).
       toast('This card was deleted');
-      navigate(`/b/${boardId}`, { replace: true });
+      navigate(`/b/${boardId}${search}`, { replace: true });
       return undefined;
     }
     // Archived cards aren't in the board snapshot; deep links to them fetch the card (docs/11 F3).
@@ -44,10 +45,10 @@ export function CardModalRoute() {
       .catch(() => {
         if (!live) return;
         toast.error('Card not found');
-        navigate(`/b/${boardId}`, { replace: true });
+        navigate(`/b/${boardId}${search}`, { replace: true });
       });
     return () => { live = false; };
-  }, [cardId, fromBoard, seen, boardId, navigate]);
+  }, [cardId, fromBoard, seen, boardId, navigate, search]);
 
   const card = fromBoard ?? fetched;
   if (!card) return null;
