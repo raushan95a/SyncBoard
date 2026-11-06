@@ -13,7 +13,7 @@ import { renameList, archiveList, deleteList, createCard } from './thunks.js';
  * One column. Memoized and selected by id: a card move re-renders only the two affected
  * columns and the moved card (docs/05 — Performance).
  */
-export const ListColumn = memo(function ListColumn({ listId, index, editable }) {
+export const ListColumn = memo(function ListColumn({ listId, index, editable, canDrag }) {
   const dispatch = useDispatch();
   const list = useSelector((s) => selectList(s, listId));
   const cardIds = useSelector((s) => selectCardIds(s, listId));
@@ -26,7 +26,7 @@ export const ListColumn = memo(function ListColumn({ listId, index, editable }) 
   };
 
   return (
-    <Draggable draggableId={listId} index={index} isDragDisabled={!editable}>
+    <Draggable draggableId={listId} index={index} isDragDisabled={!canDrag}>
       {(drag, snap) => (
         <section className={`list${snap.isDragging ? ' list--dragging' : ''}`} aria-label={`List ${list.title}`}
           data-list={list.title} ref={drag.innerRef} {...drag.draggableProps}>
@@ -43,7 +43,7 @@ export const ListColumn = memo(function ListColumn({ listId, index, editable }) 
           <Droppable droppableId={listId} type="CARD">
             {(drop, dropSnap) => (
               <ul className={`list__cards${dropSnap.isDraggingOver ? ' list__cards--over' : ''}`} ref={drop.innerRef} {...drop.droppableProps}>
-                {cardIds.map((cardId, i) => <CardItem key={cardId} cardId={cardId} index={i} editable={editable} />)}
+                {cardIds.map((cardId, i) => <CardItem key={cardId} cardId={cardId} index={i} canDrag={canDrag} />)}
                 {drop.placeholder}
               </ul>
             )}
@@ -58,7 +58,7 @@ export const ListColumn = memo(function ListColumn({ listId, index, editable }) 
   );
 });
 
-const CardItem = memo(function CardItem({ cardId, index, editable }) {
+const CardItem = memo(function CardItem({ cardId, index, canDrag }) {
   const card = useSelector((s) => selectCard(s, cardId));
   const allLabels = useSelector(selectLabels);
   const members = useSelector(selectMembers);
@@ -69,7 +69,7 @@ const CardItem = memo(function CardItem({ cardId, index, editable }) {
   const due = dueState(card);
 
   return (
-    <Draggable draggableId={cardId} index={index} isDragDisabled={!editable}>
+    <Draggable draggableId={cardId} index={index} isDragDisabled={!canDrag}>
       {(drag, snap) => (
         <li ref={drag.innerRef} {...drag.draggableProps} {...drag.dragHandleProps}>
           <Link className={`card${card.completed ? ' card--done' : ''}${snap.isDragging ? ' card--dragging' : ''}`}

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { User, AVATAR_COLORS } from '../models/User.js';
 import { ApiError } from '../utils/ApiError.js';
 import { env } from '../config/env.js';
+import { revokeUserSockets } from '../sockets/publisher.js';
 
 const INVALID_LOGIN = 'Invalid email or password';
 
@@ -35,5 +36,5 @@ export async function login({ email, password }) {
 /** Revokes every session of this user: all existing tokens stop matching tokenVersion. */
 export async function revokeAllSessions(userId) {
   await User.updateOne({ _id: userId }, { $inc: { tokenVersion: 1 } });
-  // Phase 4: publishUser(userId, EVT.SESSION_REVOKED) + disconnect the user's sockets.
+  revokeUserSockets(userId);
 }

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { LIMITS } from '@syncboard/shared/limits';
 import { http } from '../../api/http.js';
+import { onBoardsChanged } from '../../api/socket.js';
 import { AppHeader } from '../../components/AppHeader.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 
@@ -50,12 +51,19 @@ export function BoardsPage() {
   const [boards, setBoards] = useState(null);
   const [creating, setCreating] = useState(false);
 
+  // Load once, then refetch whenever a board I belong to is created, renamed, deleted, or I'm
+  // added/removed (boards:changed to my user room, docs/04).
   useEffect(() => {
     let live = true;
-    http.get('/boards')
+    const load = () => http.get('/boards')
       .then((res) => live && setBoards(res.boards))
       .catch((err) => live && err.status !== 401 && toast.error(err.message));
-    return () => { live = false; };
+    load();
+    const unsubscribe = onBoardsChanged(load);
+    return () => {
+      live = false;
+      unsubscribe();
+    };
   }, []);
 
   return (

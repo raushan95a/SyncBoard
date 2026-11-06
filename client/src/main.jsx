@@ -5,7 +5,8 @@ import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { store } from './app/store.js';
 import { router } from './app/router.jsx';
-import { bootstrap, selectAuthStatus } from './features/auth/authSlice.js';
+import { bootstrap, selectAuthStatus, selectUser } from './features/auth/authSlice.js';
+import { connectSocket, disconnectSocket } from './api/socket.js';
 import './index.css';
 
 /** App boot: GET /auth/me once, with a full-screen spinner until it resolves (docs/11 F1). */
@@ -15,6 +16,14 @@ function Boot() {
   useEffect(() => {
     dispatch(bootstrap());
   }, [dispatch]);
+
+  // The socket lives exactly as long as the session: connect on login, drop on logout.
+  const userId = useSelector(selectUser)?._id;
+  useEffect(() => {
+    if (!userId) return undefined;
+    connectSocket();
+    return () => disconnectSocket();
+  }, [userId]);
 
   if (status === 'booting') {
     return <div className="boot" role="status" aria-label="Loading"><span className="spinner" /></div>;

@@ -58,18 +58,18 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 
 ## Phase 4 — Real-Time Sync (3 days, the core) · F3, F16
 
-- [ ] Socket server, handshake auth, `user:<id>` room, authorized `board:join` (one board per socket, membership re-checked after joining)
-- [ ] `publish()` / `publishUser()` called after `mutateBoard()` in **every** service, emitting the event catalog from [04](04-REALTIME-SOCKETS.md#event-catalog)
-- [ ] Client `remote.js` (`applyEvent`) for every event, including `rebalanced`, `list:deleted` (removes cards), `member:removed`, `label:deleted`
-- [ ] `eventPipeline`: pause/buffer (for load **and** drag), revision check, reorder buffer, 500 ms gap timer, `resync()`
-- [ ] Own-echo confirmation and the rebase of pending ops on remote events
-- [ ] `useBoardSocket`: join → pause → fetch → resetTo → resume; `ConnectionBanner`; global `connect_error` handling
-- [ ] **Tests:**
+- [x] Socket server, handshake auth, `user:<id>` room, authorized `board:join` (one board per socket, membership re-checked after joining)
+- [x] `publish()` / `publishUser()` called after `mutateBoard()` in **every** service, emitting the event catalog from [04](04-REALTIME-SOCKETS.md#event-catalog)
+- [x] Client `remote.js` (`applyEvent`) for every event, including `rebalanced`, `list:deleted` (removes cards), `member:removed`, `label:deleted`
+- [x] `eventPipeline`: pause/buffer (for load **and** drag), revision check, reorder buffer, 500 ms gap timer, `resync()`
+- [x] Own-echo confirmation and the rebase of pending ops on remote events
+- [x] `useBoardSocket`: join → pause → fetch → resetTo → resume; `ConnectionBanner`; global `connect_error` handling
+- [x] **Tests:**
   - socket integration: no cookie → rejected; non-member join → error; A's move reaches A (with its `clientMutationId`) and B with the same revision; another board's room receives nothing
   - 20 parallel mutations → revisions 1 through 20 exactly
   - pipeline unit tests: events 7 then 6 → both applied in order; missing 6 → resync after 500 ms; duplicate → ignored; events during a drag → buffered
   - **indirect-change reducer test** (ADR-016): a card with a pending op receives `label:deleted` / `member:removed` / `rebalanced` → after the op is echoed *or* fails, the label/assignee stays gone and the position is the rebalanced one
-- [ ] **Done when:** two browsers stay in sync for every action, and a server restart resyncs both with no user action
+- [ ] **Done when:** two browsers stay in sync for every action, and a server restart resyncs both with no user action *(verified with raw socket clients incl. a live server restart; two-browser check pending)*
 
 ## Phase 5 — Collaboration UX (2 days) · F7, F14
 

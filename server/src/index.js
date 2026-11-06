@@ -4,6 +4,7 @@ import { connectDB, disconnectDB } from './config/db.js';
 import { createApp } from './app.js';
 import { logger } from './utils/logger.js';
 import { sweepOrphans } from './services/orphanSweep.js';
+import { createIO } from './sockets/index.js';
 
 async function main() {
   await connectDB(env.MONGO_URI, env.MONGO_DB);
@@ -15,7 +16,7 @@ async function main() {
     .catch((err) => logger.error({ err }, 'orphan sweep failed'));
 
   const server = http.createServer(createApp());
-  // Socket.io attaches to this server in Phase 4.
+  const io = createIO(server);
 
   server.listen(env.PORT, () => logger.info(`API listening on http://localhost:${env.PORT}`));
 
@@ -26,6 +27,7 @@ async function main() {
     closing = true;
     logger.info({ signal }, 'shutting down');
     const force = setTimeout(() => process.exit(1), 10_000).unref();
+    io.disconnectSockets(true);              // clients auto-reconnect to the next instance and resync
     server.close(async () => {
       await disconnectDB().catch(() => {});
       clearTimeout(force);

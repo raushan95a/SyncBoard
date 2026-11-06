@@ -3,9 +3,9 @@ import ObjectId from 'bson-objectid';
 import toast from 'react-hot-toast';
 import { between } from '@syncboard/shared/position';
 import { http } from '../../api/http.js';
-import { DELETED, exists } from './ops.js';
+import { exists } from './ops.js';
 import {
-  boardLoading, boardLoaded, boardLoadFailed, opStarted, opSent, opAcked, opFailed, opConfirmed,
+  boardLoading, boardLoaded, boardLoadFailed, opStarted, opSent, opAcked, opFailed,
 } from './boardSlice.js';
 import { sendSerial } from './sendSerial.js';
 
@@ -46,11 +46,10 @@ const board = (getState) => getState().board;
  * @param {string} o.entityId
  * @param {import('./ops.js').Op} o.op
  * @param {(mid: string, getState: () => any) => Promise<any>} o.send  runs when the queue reaches it
- * @param {(res: any) => any} o.confirmed   the confirmed entity from the response ('DELETED' for deletes)
  * @param {string[]} [o.waitFor]            other entities whose queues must drain first
  * @param {string} o.error                  toast text on failure
  */
-const runOp = ({ kind, entityId, op, send, confirmed, waitFor = [], error }) => (dispatch, getState) => {
+const runOp = ({ kind, entityId, op, send, waitFor = [], error }) => (dispatch, getState) => {
   const mid = nanoid();
   dispatch(opStarted({ mid, kind, entityId, op }));
   return sendSerial([entityId, ...waitFor], () => {
@@ -58,9 +57,8 @@ const runOp = ({ kind, entityId, op, send, confirmed, waitFor = [], error }) => 
     return send(mid, getState);
   })
     .then((res) => {
-      dispatch(opAcked({ mid, revision: res?.revision }));
-      // Phase 3 stand-in for the socket echo (see opConfirmed).
-      dispatch(opConfirmed({ mid, entity: confirmed(res), rebalanced: res?.rebalanced }));
+      // Acked, not confirmed: the socket echo (matched by clientMutationId) confirms it (docs/04).
+      dispatch(opAcked({ mid, revision: res?.revision, version: res?.card?.version }));
       return { ok: true, data: res };
     })
     .catch((err) => {
@@ -72,13 +70,16 @@ const runOp = ({ kind, entityId, op, send, confirmed, waitFor = [], error }) => 
 
 // ---- loading -------------------------------------------------------------------------------
 
+/** Loads (or reloads) the snapshot. Resolves true on success. */
 export const loadBoard = (boardId) => async (dispatch) => {
   dispatch(boardLoading(boardId));
   try {
     const snapshot = await http.get(`/boards/${boardId}`);
     dispatch(boardLoaded({ boardId, snapshot }));
+    return true;
   } catch (err) {
     dispatch(boardLoadFailed({ boardId, error: { status: err.status, code: err.code, message: err.message } }));
+    return false;
   }
 };
 
@@ -89,7 +90,6 @@ export const renameBoard = (title) => (dispatch, getState) => {
   return dispatch(runOp({
     kind: 'board', entityId: id, op: { type: 'fields', set: { title } },
     send: (mid) => http.patch(`/boards/${id}`, { title, clientMutationId: mid }),
-    confirmed: (res) => res.board,
     error: 'Could not rename the board',
   }));
 };
@@ -104,7 +104,6 @@ export const createList = (title) => (dispatch, getState) => {
   return dispatch(runOp({
     kind: 'list', entityId: _id, op: { type: 'create', entity },
     send: (mid) => http.post(`/boards/${s.boardId}/lists`, { _id, title, clientMutationId: mid }),
-    confirmed: (res) => res.list,
     error: 'Could not add the list',
   }));
 };
@@ -112,7 +111,6 @@ export const createList = (title) => (dispatch, getState) => {
 const updateList = (listId, set, error) => runOp({
   kind: 'list', entityId: listId, op: { type: 'fields', set },
   send: (mid) => http.patch(`/lists/${listId}`, { ...set, clientMutationId: mid }),
-  confirmed: (res) => res.list,
   error,
 });
 export const renameList = (listId, title) => updateList(listId, { title }, 'Could not rename the list');
@@ -121,7 +119,6 @@ export const archiveList = (listId) => updateList(listId, { archived: true }, 'C
 export const deleteList = (listId) => runOp({
   kind: 'list', entityId: listId, op: { type: 'delete' },
   send: (mid) => http.del(`/lists/${listId}?clientMutationId=${mid}`),
-  confirmed: () => DELETED,
   error: 'Could not delete the list',
 });
 
@@ -132,7 +129,6 @@ export const moveList = ({ listId, beforeId, afterId }) => (dispatch, getState) 
   return dispatch(runOp({
     kind: 'list', entityId: listId, op: { type: 'move', position },
     send: (mid) => http.patch(`/lists/${listId}/move`, { beforeId: beforeId ?? null, afterId: afterId ?? null, clientMutationId: mid }),
-    confirmed: (res) => res.list,
     waitFor: [beforeId, afterId].filter(Boolean),
     error: 'Could not move the list',
   }));
@@ -151,7 +147,6 @@ export const createCard = (listId, title) => (dispatch, getState) => {
   return dispatch(runOp({
     kind: 'card', entityId: _id, op: { type: 'create', entity },
     send: (mid) => http.post(`/lists/${listId}/cards`, { _id, title, clientMutationId: mid }),
-    confirmed: (res) => res.card,
     waitFor: [listId],                    // the list may itself still be being created
     error: 'Could not add the card',
   }));
@@ -166,25 +161,25 @@ export const moveCard = ({ cardId, toListId, beforeId, afterId }) => (dispatch, 
     send: (mid) => http.patch(`/cards/${cardId}/move`, {
       toListId, beforeId: beforeId ?? null, afterId: afterId ?? null, clientMutationId: mid,
     }),
-    confirmed: (res) => res.card,
     waitFor: [toListId],
     error: 'Could not move the card',
   }));
 };
 
 /**
- * Title/description, compare-and-set. The version is read when the request is SENT, from the
- * confirmed base, so a second save waits for the first and uses the version it produced.
+ * Title/description, compare-and-set. The version is read when the request is SENT: the newest of
+ * the confirmed base and any acked-but-not-yet-echoed response, so a second save (which waits for
+ * the first) uses the version the first one produced.
  */
 export const saveContent = (cardId, fields) => runOp({
   kind: 'card', entityId: cardId, op: { type: 'content', fields },
   send: (mid, getState) => {
     const s = board(getState);
     const confirmed = cardId in s.bases ? s.bases[cardId] : s.cards.byId[cardId];
-    const version = exists(confirmed) ? confirmed.version : 0;
+    const acked = s.ops.filter((o) => o.entityId === cardId && o.version !== undefined).map((o) => o.version);
+    const version = Math.max(exists(confirmed) ? confirmed.version : 0, ...acked);
     return http.patch(`/cards/${cardId}/content`, { ...fields, version, clientMutationId: mid });
   },
-  confirmed: (res) => res.card,
   error: 'Could not save the card',
 });
 
@@ -192,7 +187,6 @@ export const saveContent = (cardId, fields) => runOp({
 export const setCardFields = (cardId, set) => runOp({
   kind: 'card', entityId: cardId, op: { type: 'fields', set },
   send: (mid) => http.patch(`/cards/${cardId}`, { ...set, clientMutationId: mid }),
-  confirmed: (res) => res.card,
   error: 'Could not update the card',
 });
 
@@ -205,7 +199,6 @@ export const toggleCardRef = (cardId, kind, id, on) => {
     send: (mid) => (on
       ? http.del(`/cards/${cardId}/${kind}/${id}?clientMutationId=${mid}`)
       : http.post(`/cards/${cardId}/${kind}`, { [bodyKey]: id, clientMutationId: mid })),
-    confirmed: (res) => res.card,
     error: 'Could not update the card',
   });
 };
@@ -213,6 +206,5 @@ export const toggleCardRef = (cardId, kind, id, on) => {
 export const deleteCard = (cardId) => runOp({
   kind: 'card', entityId: cardId, op: { type: 'delete' },
   send: (mid) => http.del(`/cards/${cardId}?clientMutationId=${mid}`),
-  confirmed: () => DELETED,
   error: 'Could not delete the card',
 });

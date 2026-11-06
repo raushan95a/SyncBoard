@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
@@ -8,10 +8,18 @@ import { LIMITS } from '@syncboard/shared/limits';
 import { http } from '../../api/http.js';
 import { AppHeader } from '../../components/AppHeader.jsx';
 import { EditableText, InlineAdd } from '../../components/ui/InlineForm.jsx';
-import { boardLeft } from './boardSlice.js';
-import { loadBoard, renameBoard, createList, moveList, moveCard, messageFor } from './thunks.js';
-import { selectBoardStatus, selectBoardError, selectMeta, selectMyRole, selectListOrder, selectCardIds } from './selectors.js';
+import { renameBoard, createList, moveList, moveCard, messageFor } from './thunks.js';
+import {
+  selectBoardStatus, selectBoardError, selectGone, selectConnection, selectMeta, selectMyRole, selectListOrder, selectCardIds,
+} from './selectors.js';
+import { useBoardSocket } from './useBoardSocket.js';
 import { ListColumn } from './ListColumn.jsx';
+
+const GONE_TEXT = {
+  'not-found': ['Board not found', 'It may have been deleted, or you no longer have access.'],
+  deleted: ['This board was deleted', null],
+  removed: ['You no longer have access', 'You were removed from this board.'],
+};
 
 /** /b/:boardId — keyed by boardId so switching boards starts fresh. */
 export function BoardRoute() {
@@ -20,21 +28,20 @@ export function BoardRoute() {
 }
 
 function BoardPage({ boardId }) {
-  const dispatch = useDispatch();
   const status = useSelector(selectBoardStatus);
   const error = useSelector(selectBoardError);
-
-  useEffect(() => {
-    dispatch(loadBoard(boardId));
-    return () => { dispatch(boardLeft()); };
-  }, [boardId, dispatch]);
+  const gone = useSelector(selectGone);
+  const { pauseDrag, resumeDrag } = useBoardSocket(boardId);
 
   if (status === 'gone' || status === 'error') {
+    const [title, text] = status === 'gone'
+      ? GONE_TEXT[gone.reason] ?? GONE_TEXT['not-found']
+      : ['Could not load this board', error?.message];
     return (
       <div className="page"><AppHeader />
         <main className="page__body empty">
-          <h1>{status === 'gone' ? 'Board not found' : 'Could not load this board'}</h1>
-          <p className="muted">{status === 'gone' ? 'It may have been deleted, or you no longer have access.' : error?.message}</p>
+          <h1>{title}</h1>
+          <p className="muted">{gone.reason === 'deleted' ? `${gone.by ?? 'Someone'} deleted it.` : text}</p>
           <Link className="btn" to="/boards">Back to your boards</Link>
         </main>
       </div>
@@ -47,17 +54,26 @@ function BoardPage({ boardId }) {
       </div>
     );
   }
-  return <BoardView boardId={boardId} />;
+  return <BoardView boardId={boardId} pauseDrag={pauseDrag} resumeDrag={resumeDrag} />;
 }
 
-function BoardView({ boardId }) {
+/** "Reconnecting…" while the socket is down. Edits still work over REST; dragging doesn't. */
+function ConnectionBanner() {
+  const connection = useSelector(selectConnection);
+  if (connection === 'online') return null;
+  return <div className="banner banner--warn banner--conn" role="status">Reconnecting… changes from others will appear when the connection is back.</div>;
+}
+
+function BoardView({ boardId, pauseDrag, resumeDrag }) {
   const dispatch = useDispatch();
   const store = useStore();
   const navigate = useNavigate();
   const meta = useSelector(selectMeta);
   const myRole = useSelector(selectMyRole);
   const listOrder = useSelector(selectListOrder);
+  const online = useSelector(selectConnection) === 'online';
   const editable = canEdit(myRole);
+  const canDrag = editable && online;
   const isOwner = canManageBoard(myRole);
 
   const deleteBoard = async () => {
@@ -76,7 +92,7 @@ function BoardView({ boardId }) {
    * Neighbors come from what the user SAW: the rendered ids with the dragged item removed
    * (docs/05 — Drag and Drop). Dropping back in place is a no-op and never reaches the server.
    */
-  const onDragEnd = useCallback(({ source, destination, draggableId, type }) => {
+  const drop = useCallback(({ source, destination, draggableId, type }) => {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
     const state = store.getState();
@@ -92,6 +108,15 @@ function BoardView({ boardId }) {
     }
   }, [dispatch, store]);
 
+  // Events are buffered while dragging: lists must not change under the pointer (docs/04).
+  const onDragEnd = useCallback((result) => {
+    try {
+      drop(result);
+    } finally {
+      resumeDrag();                       // AFTER the optimistic apply, so buffered events rebase onto it
+    }
+  }, [resumeDrag, drop]);
+
   return (
     <div className="page page--board">
       <AppHeader>
@@ -101,14 +126,15 @@ function BoardView({ boardId }) {
         {myRole === 'viewer' && <span className="badge">View only</span>}
         {isOwner && <button className="btn btn--ghost btn--danger" onClick={deleteBoard}>Delete board</button>}
       </AppHeader>
+      <ConnectionBanner />
 
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext onDragStart={pauseDrag} onDragEnd={onDragEnd}>
         <Droppable droppableId="board" type="LIST" direction="horizontal">
           {(provided) => (
             <main className="board__lists" ref={provided.innerRef} {...provided.droppableProps}>
               {listOrder.length === 0 && !editable && <p className="muted">This board has no lists yet.</p>}
               {listOrder.map((listId, index) => (
-                <ListColumn key={listId} listId={listId} index={index} editable={editable} />
+                <ListColumn key={listId} listId={listId} index={index} editable={editable} canDrag={canDrag} />
               ))}
               {provided.placeholder}
               {editable && (

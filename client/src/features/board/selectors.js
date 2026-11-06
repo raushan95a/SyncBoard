@@ -4,6 +4,10 @@ const EMPTY = Object.freeze([]);
 
 export const selectBoardStatus = (s) => s.board.status;
 export const selectBoardError = (s) => s.board.error;
+export const selectConnection = (s) => s.board.connection;
+const NOT_GONE = Object.freeze({ reason: null, by: null });
+/** { reason: 'not-found' | 'deleted' | 'removed', by } once the board is gone. */
+export const selectGone = (s) => s.board.gone ?? NOT_GONE;
 export const selectMeta = (s) => s.board.meta;
 export const selectMyRole = (s) => s.board.myRole;
 export const selectLabels = (s) => s.board.meta?.labels ?? EMPTY;

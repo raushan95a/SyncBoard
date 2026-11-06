@@ -173,7 +173,7 @@ Short Architecture Decision Records. Each one gives the context, the decision, t
 **Consequences:** The Phase 2 UI feels a little slower, but there's nothing to rewrite in Phase 3, and Phase 2 stays focused on the server and the data model.
 
 ## ADR-024: REST response stands in for the echo until sockets exist
-**Status:** Accepted (2026-11-06), temporary until Phase 4
+**Status:** Superseded in Phase 4 (2026-11-06): `runOp` now only acks; the echo confirms through `remoteEvent`
 
 **Context:** In the rebase model an op is confirmed by its own socket echo (ADR-011). Phase 3 builds the ops engine before Phase 4 adds sockets, so no echo ever arrives and acked ops would never leave `ops`.
 **Decision:** `boardSlice` has an `opConfirmed({ mid, entity, rebalanced })` reducer with exactly the own-echo semantics (base = confirmed entity, drop the op, replay the rest, apply `rebalanced` first). In Phase 3, `thunks.runOp` dispatches it right after `opAcked`, using the REST response.

@@ -209,3 +209,6 @@ h2.card-modal__title { border: 0; background: none; padding: 0; }
   .card-modal { grid-template-columns: 1fr; }
   .list { flex-basis: 85vw; }
 }
+
+/* Connection banner (docs/11 F16) */
+.banner--conn { margin: .5rem 1rem 0; }
