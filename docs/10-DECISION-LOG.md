@@ -179,6 +179,21 @@ Short Architecture Decision Records. Each one gives the context, the decision, t
 **Decision:** `boardSlice` has an `opConfirmed({ mid, entity, rebalanced })` reducer with exactly the own-echo semantics (base = confirmed entity, drop the op, replay the rest, apply `rebalanced` first). In Phase 3, `thunks.runOp` dispatches it right after `opAcked`, using the REST response.
 **Consequences:** Phase 4 removes that one dispatch from `runOp`, and the event pipeline dispatches `opConfirmed` when an event's `clientMutationId` matches a pending op. The reducers and their tests stay unchanged.
 
+## ADR-025: Clients reconnect after a server-initiated disconnect
+**Status:** Accepted (2026-11-06)
+
+**Context:** Graceful shutdown (every deploy or restart) calls `io.disconnectSockets(true)`. Socket.io clients treat the reason `io server disconnect` as deliberate and do **not** reconnect on their own, so every open board would have stayed on "Reconnecting…" forever. The Playwright restart test found this.
+**Decision:** The global socket listener reconnects after a random 0.5–2 s delay when the reason is `io server disconnect` and the session still wants a socket. The jitter spreads a fleet of clients over the new instance. A revoked session fails the handshake (`UNAUTHENTICATED`), which logs the user out, so logout-everywhere still ends sessions.
+**Consequences:** Restarts and deploys recover with no user action (join → snapshot → resume), as docs/11 F16 requires.
+
+## ADR-026: A purpose-built propagation script instead of Artillery
+**Status:** Accepted (2026-11-06)
+
+**Context:** docs/08 planned Artillery's Socket.io engine to measure p95 propagation. The number that matters is the time from a REST move to the event at the *other* clients, matched per move.
+**Decision:** `load/propagation.js` (about 150 lines, `socket.io-client` only) opens N sockets on one board, drives moves at a fixed rate, matches each event to its move by `clientMutationId`, and reports p50/p95/max plus the delivery count.
+**Alternatives:** Artillery: more general load shapes, but a large dependency tree, and matching events to requests needs custom processors anyway.
+**Consequences:** One exact measurement and a delivery check (no lost events), with no extra dependencies. CPU profiling and mixed workloads would still need a general tool.
+
 ---
 
 ## Documentation corrections (2026-11-06)

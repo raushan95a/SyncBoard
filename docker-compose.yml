@@ -1,0 +1,42 @@
+# docs/08 — Docker and Multi-Instance Verification. The database is always Atlas (server/.env).
+#
+#   docker compose up --build                    # one instance:  http://localhost:4000
+#   docker compose --profile scale up --build    # two instances + Redis + nginx: http://localhost:8080
+#
+# Multi-instance check: open the board as user A and user B in two browsers; GET /api/healthz in
+# each shows which instance served it (`instance`). Move a card in one, and it must appear in the
+# other. That works only through the Redis adapter.
+services:
+  app:
+    build: .
+    env_file: ./server/.env
+    environment:
+      NODE_ENV: production          # secure cookie: works on http://localhost in Chrome, needs HTTPS elsewhere
+    ports: ["4000:4000"]
+
+  redis:
+    image: redis:7-alpine
+    profiles: ["scale"]
+
+  app1:
+    build: .
+    hostname: app1
+    env_file: ./server/.env
+    environment: { NODE_ENV: production, REDIS_URL: "redis://redis:6379" }
+    depends_on: [redis]
+    profiles: ["scale"]
+
+  app2:
+    build: .
+    hostname: app2
+    env_file: ./server/.env
+    environment: { NODE_ENV: production, REDIS_URL: "redis://redis:6379" }
+    depends_on: [redis]
+    profiles: ["scale"]
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes: ["./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
+    ports: ["8080:80"]
+    depends_on: [app1, app2]
+    profiles: ["scale"]

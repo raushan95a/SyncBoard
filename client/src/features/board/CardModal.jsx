@@ -127,7 +127,8 @@ function CardModal({ card, editable, close }) {
               onBlur={() => {
                 signal.onBlur();
                 d.flush();
-                if (d.draft.description) setEditingDesc(false);
+                // Switching windows also blurs; only a real blur inside the page ends editing.
+                if (d.draft.description && document.hasFocus()) setEditingDesc(false);
               }} />
           ) : (
             <div className={`markdown${editable ? ' editable' : ''}`} onClick={() => editable && setEditingDesc(true)}>

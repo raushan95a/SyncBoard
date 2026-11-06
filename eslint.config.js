@@ -17,8 +17,13 @@ export default [
     },
   },
   {
-    files: ['server/**/*.js', 'shared/**/*.js', 'client/scripts/**/*.js', '*.config.js', '**/vite.config.js', '**/vitest.config.js'],
+    files: ['server/**/*.js', 'shared/**/*.js', 'client/scripts/**/*.js', 'e2e/**/*.js', 'load/**/*.js', '*.config.js', '**/vite.config.js', '**/vitest.config.js'],
     languageOptions: { globals: globals.node },
+  },
+  {
+    // Playwright helpers also run functions inside the page (page.evaluate).
+    files: ['e2e/**/*.js'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {
     files: ['client/src/**/*.{js,jsx}'],

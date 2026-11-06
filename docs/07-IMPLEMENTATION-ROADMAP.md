@@ -53,8 +53,8 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
   - `position.js` unit tests (between, ends, 1,000 inserts at the same spot stay sorted, `comparePos` matches the MongoDB sort)
   - move integration tests (cross-list, stale neighbor, foreign neighbor → 400, rebalance, two parallel drops into the same gap → **distinct** keys)
   - `ops` reducer tests: toggle and move on the same card, then confirm the first → no jump; fail the second → only it is undone
-- [ ] **Manual:** stop the server mid-drag → the card snaps back and a toast appears *(rollback logic covered by reducer tests; browser check pending)*
-- [ ] **Done when:** every action feels instant and rolls back correctly on failure
+- [x] **Manual:** stop the server mid-drag → the card snaps back and a toast appears *(automated in Playwright, Phase 8)*
+- [x] **Done when:** every action feels instant and rolls back correctly on failure
 
 ## Phase 4 — Real-Time Sync (3 days, the core) · F3, F16
 
@@ -69,7 +69,7 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
   - 20 parallel mutations → revisions 1 through 20 exactly
   - pipeline unit tests: events 7 then 6 → both applied in order; missing 6 → resync after 500 ms; duplicate → ignored; events during a drag → buffered
   - **indirect-change reducer test** (ADR-016): a card with a pending op receives `label:deleted` / `member:removed` / `rebalanced` → after the op is echoed *or* fails, the label/assignee stays gone and the position is the rebalanced one
-- [ ] **Done when:** two browsers stay in sync for every action, and a server restart resyncs both with no user action *(verified with raw socket clients incl. a live server restart; two-browser check pending)*
+- [x] **Done when:** two browsers stay in sync for every action, and a server restart resyncs both with no user action *(Playwright, Phase 8)*
 
 ## Phase 5 — Collaboration UX (2 days) · F7, F14
 
@@ -78,7 +78,7 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 - [x] Flush the draft on close, and back it up to `sessionStorage`
 - [x] Presence bar (deduplicated); "is editing" with heartbeat and expiry
 - [x] **Tests:** title-versus-description concurrent edit → no banner, both saved; description-versus-description → banner; component test of the banner's three actions
-- [ ] **Done when:** concurrent edits are never silently overwritten, and edits to different fields never show a conflict *(merge rules covered by model, hook, and live server tests; two-browser check pending)*
+- [x] **Done when:** concurrent edits are never silently overwritten, and edits to different fields never show a conflict *(Playwright, Phase 8)*
 
 ## Phase 6 — Members, Labels, Comments, Archive (2 days) · F9–F13
 
@@ -100,12 +100,12 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 
 ## Phase 8 — Hardening, E2E, Deploy (2 days)
 
-- [ ] Security checklist ([06](06-SECURITY-AUTH.md))
-- [ ] Playwright: two-user sync, the concurrency matrix's key cells ([11](11-FEATURE-WORKFLOWS.md#concurrency-matrix)), reconnect after a server restart, member removal
-- [ ] Redis adapter and a two-instance test behind nginx
-- [ ] Single-origin Docker image, CI, deploy (Render/Railway/Fly + Atlas)
-- [ ] Artillery load test; record p95 propagation
-- [ ] README: GIF demo, architecture diagram, trade-offs (from [10](10-DECISION-LOG.md)), measured numbers, live link
+- [ ] Security checklist ([06](06-SECURITY-AUTH.md)) *(code-side items done; HTTPS and the Atlas allowlist/users depend on the deploy)*
+- [x] Playwright: two-user sync, the concurrency matrix's key cells ([11](11-FEATURE-WORKFLOWS.md#concurrency-matrix)), reconnect after a server restart, member removal
+- [ ] Redis adapter and a two-instance test behind nginx *(adapter + compose/nginx written; the two-instance run needs Docker)*
+- [ ] Single-origin Docker image, CI, deploy (Render/Railway/Fly + Atlas) *(Dockerfile + CI written; runtime stage simulated without Docker; image build, CI run, and deploy pending)*
+- [x] Artillery load test; record p95 propagation *(purpose-built script instead, ADR-026; numbers in [08](08-TESTING-DEPLOYMENT.md))*
+- [ ] README: GIF demo, architecture diagram, trade-offs (from [10](10-DECISION-LOG.md)), measured numbers, live link *(written; GIF and live link pending)*
 
 ---
 

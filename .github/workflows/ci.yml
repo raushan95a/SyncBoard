@@ -1,0 +1,32 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      # Unit + integration tests use an in-memory MongoDB replica set: no Atlas, no secrets.
+      - run: npm test --workspaces --if-present
+      - run: npm run build -w client
+      - run: npx playwright install --with-deps chromium
+      # E2E also runs on an in-memory database (e2e/server.js), serving the built client.
+      - run: npm run e2e
+      - run: npm audit --omit=dev --audit-level=high
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7

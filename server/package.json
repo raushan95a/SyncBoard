@@ -13,6 +13,7 @@
     "seed": "node --env-file=.env scripts/seed.js"
   },
   "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
     "@syncboard/shared": "^0.0.0",
     "bcryptjs": "^3.0.3",
     "cookie": "^2.0.2",
@@ -25,6 +26,7 @@
     "mongoose": "^9.12.0",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
+    "redis": "^4.7.1",
     "socket.io": "^4.8.4",
     "zod": "^4.6.7"
   },

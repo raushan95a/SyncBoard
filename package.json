@@ -14,10 +14,12 @@
     "dev": "concurrently -k -n server,client -c blue,magenta \"npm:dev -w server\" \"npm:dev -w client\"",
     "test": "npm test --workspaces --if-present",
     "lint": "eslint .",
-    "build": "npm run build -w client"
+    "build": "npm run build -w client",
+    "e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "concurrently": "^10.0.6",
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",

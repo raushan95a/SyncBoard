@@ -125,6 +125,21 @@ Client store work for the same board (`npm run bench -w client`, Node, before Re
 | Echo confirm (`card:moved`) | 2.5 ms |
 | Filter one 500-card column (cold cache) | 0.03 ms |
 
+### Measured (Phase 8, 2026-11-06): propagation
+
+`node load/propagation.js` (ADR-026): 50 sockets on one board, one user moving cards over REST.
+Propagation = REST request sent → `card:moved` received by each of the 50 other sockets.
+
+| Target | Rate | Delivered | Propagation p50 / p95 / max | REST p50 / p95 |
+|--------|------|-----------|-----------------------------|----------------|
+| e2e server, in-memory MongoDB (server cost only) | 10 moves/s × 30 s | 15,000 / 15,000 | 18 / 36 / 43 ms | 20 / 38 ms |
+| Dev stack via Vite proxy, Atlas M0 (home connection) | 4 moves/s × 30 s | 6,000 / 6,000 | 728 / 4,491 / 8,708 ms | 729 / 4,492 ms |
+
+Propagation tracks the REST time almost exactly: the event leaves right after the commit, so the cost is the transaction. Against
+the remote free tier, each transaction makes several round trips, and because writes to one board are serialized
+(ADR-010/015), 4 moves/s on a single board starts to queue; that queueing is the p95 tail. No event was lost in any run.
+(The dev API allows 300 requests/minute per user, which caps that run at 5 moves/s.)
+
 Rendering: the render-count test asserts that a move re-renders exactly 3 components (source column, destination column,
 moved card). The optimistic move is applied before the request, so drag latency is the ~4 ms store update, not the
 ~230 ms server round trip. Still to do: browser timings (first paint of the 2,500-card board) and the Artillery run.

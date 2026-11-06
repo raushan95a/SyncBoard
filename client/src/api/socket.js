@@ -10,6 +10,7 @@ import { EVT } from '@syncboard/shared/events';
  * listeners are added and removed by useBoardSocket. Never call removeAllListeners().
  */
 let socket = null;
+let wanted = false;              // true between connectSocket() and disconnectSocket()
 const boardsChangedSubs = new Set();
 
 export function getSocket() {
@@ -29,17 +30,28 @@ export function initSocket({ onUnauthenticated, onSessionRevoked }) {
     if (err?.message === 'UNAUTHENTICATED') onUnauthenticated();
   });
   s.on(EVT.SESSION_REVOKED, onSessionRevoked);
+  // A server-initiated disconnect (graceful shutdown on deploy/restart) is NOT retried by
+  // socket.io on its own. Reconnect after a random 0.5–2 s, so a fleet of clients doesn't
+  // stampede the new instance. A revoked session is rejected at the handshake → logout.
+  s.on('disconnect', (reason) => {
+    if (reason !== 'io server disconnect') return;
+    setTimeout(() => {
+      if (wanted && !s.connected && !s.active) s.connect();
+    }, 500 + Math.random() * 1500);
+  });
   s.on(EVT.BOARDS_CHANGED, (p) => boardsChangedSubs.forEach((fn) => fn(p)));
 }
 
 /** (Re)connect with the current cookie, e.g. right after logging in. */
 export function connectSocket() {
+  wanted = true;
   const s = getSocket();
   if (s.connected || s.active) s.disconnect();
   s.connect();
 }
 
 export function disconnectSocket() {
+  wanted = false;
   socket?.disconnect();
 }
 

@@ -117,11 +117,11 @@ Rules:
 
 ## Pre-Deploy Security Checklist
 
-- [ ] HTTPS everywhere, and the `secure` cookie flag is set
-- [ ] Same-origin (or same-site) deployment, with no third-party cookies
-- [ ] Rate limits on
-- [ ] The authorization test matrix passes (see [08](08-TESTING-DEPLOYMENT.md))
-- [ ] The error handler hides stack traces in production
+- [ ] HTTPS everywhere, and the `secure` cookie flag is set *(flag verified in production mode; HTTPS depends on the host)*
+- [x] Same-origin (or same-site) deployment, with no third-party cookies *(server serves the built client)*
+- [x] Rate limits on
+- [x] The authorization test matrix passes (see [08](08-TESTING-DEPLOYMENT.md))
+- [x] The error handler hides stack traces in production
 - [ ] Atlas: IP allowlist set (not `0.0.0.0/0` unless the host has no static egress IP); the database user has least privilege (`readWrite` on `collabboard-prod` only); separate users for dev and prod
-- [ ] `MONGO_URI` lives only in `server/.env` / the platform's secret store, never in git
-- [ ] `JWT_SECRET` is at least 64 random characters and isn't in git
+- [x] `MONGO_URI` lives only in `server/.env` / the platform's secret store, never in git
+- [x] `JWT_SECRET` is at least 64 random characters and isn't in git *(length enforced at startup)*
