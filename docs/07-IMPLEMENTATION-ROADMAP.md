@@ -82,13 +82,13 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 
 ## Phase 6 — Members, Labels, Comments, Archive (2 days) · F9–F13
 
-- [ ] Members: invite, change role, remove or leave; last-owner rule; `member:*`, `board:access-revoked`, `boards:changed`
-- [ ] Boards page live through `boards:changed`; `board:deleted` → full-page "gone" view
-- [ ] Labels editor (create, rename, recolor, delete with cascade)
-- [ ] Comments: pagination, `commentCount`, live updates
-- [ ] Archive panel: `GET /boards/:id/archived`, restore (append to the end; 422 if the list is archived), permanent delete
-- [ ] Viewer role: read-only UI everywhere
-- [ ] **Tests:** a removed member loses REST and socket access right away and is unassigned from cards; deleting a label removes it from cards; last owner can't leave; restore into an archived list → 422
+- [x] Members: invite, change role, remove or leave; last-owner rule; `member:*`, `board:access-revoked`, `boards:changed`
+- [x] Boards page live through `boards:changed`; `board:deleted` → full-page "gone" view
+- [x] Labels editor (create, rename, recolor, delete with cascade)
+- [x] Comments: pagination, `commentCount`, live updates
+- [x] Archive panel: `GET /boards/:id/archived`, restore (append to the end; 422 if the list is archived), permanent delete
+- [x] Viewer role: read-only UI everywhere
+- [x] **Tests:** a removed member loses REST and socket access right away and is unassigned from cards; deleting a label removes it from cards; last owner can't leave; restore into an archived list → 422
 
 ## Phase 7 — Filters, Performance, Polish (1–2 days) · F15
 

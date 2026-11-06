@@ -248,3 +248,44 @@ describe('card editing indicator', () => {
     expect(heard).toEqual([]);
   });
 });
+
+describe('member removal', () => {
+  it('the removed user gets board:access-revoked + boards:changed and stops receiving board events', async () => {
+    const a = await newClient('A');
+    const b = await newClient('B');
+    const board = await newBoard(a);
+    await a.agent.post(`/api/boards/${board.board._id}/members`).send({ email: b.user.email, role: 'editor' }).expect(201);
+    const sa = await connected(connect(a.cookie));
+    const sb = await connected(connect(b.cookie));
+    await join(sa, board.board._id);
+    await join(sb, board.board._id);
+
+    const removedEvt = next(sa, EVT.MEMBER_REMOVED);
+    const revoked = next(sb, EVT.ACCESS_REVOKED);
+    const changed = next(sb, EVT.BOARDS_CHANGED);
+    await a.agent.delete(`/api/boards/${board.board._id}/members/${b.user._id}`).expect(200);
+    expect(await removedEvt).toMatchObject({ userId: b.user._id });
+    expect(await revoked).toEqual({ boardId: board.board._id });
+    expect(await changed).toEqual({ boardId: board.board._id, reason: 'removed' });
+
+    const heard = collect(sb, EVT.BOARD_UPDATED);
+    await a.agent.patch(`/api/boards/${board.board._id}`).send({ title: 'After' }).expect(200);
+    await tick();
+    expect(heard).toEqual([]);
+    expect(await join(sb, board.board._id)).toEqual({ error: 'NOT_FOUND' });
+  });
+
+  it('invite → the invitee gets boards:changed (added) and the room gets member:added', async () => {
+    const a = await newClient('A');
+    const b = await newClient('B');
+    const board = await newBoard(a);
+    const sa = await connected(connect(a.cookie));
+    const sb = await connected(connect(b.cookie));
+    await join(sa, board.board._id);
+    const added = next(sa, EVT.MEMBER_ADDED);
+    const changed = next(sb, EVT.BOARDS_CHANGED);
+    await a.agent.post(`/api/boards/${board.board._id}/members`).send({ email: b.user.email, role: 'viewer' }).expect(201);
+    expect((await added).member).toMatchObject({ userId: b.user._id, role: 'viewer', name: 'B' });
+    expect(await changed).toEqual({ boardId: board.board._id, reason: 'added' });
+  });
+});

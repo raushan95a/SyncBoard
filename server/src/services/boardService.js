@@ -58,6 +58,15 @@ export async function getBoard(boardId) {
   return { board: toBoardDTO(board), lists, cards, revision: board.revision };
 }
 
+/** Archived lists and cards, newest first, for the archive panel (docs/11 F9). Not live. */
+export async function getArchived(boardId) {
+  const [lists, cards] = await Promise.all([
+    List.find({ boardId, archived: true }).sort({ updatedAt: -1, _id: -1 }).lean(),
+    Card.find({ boardId, archived: true }).sort({ updatedAt: -1, _id: -1 }).lean(),
+  ]);
+  return { lists, cards };
+}
+
 export async function renameBoard(boardId, { title }, ctx) {
   const { board, revision } = await mutateBoard(boardId, async (session) => ({
     board: await Board.findByIdAndUpdate(boardId, { $set: { title } }, { returnDocument: 'after', session }).lean(),

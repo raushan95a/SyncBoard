@@ -14,6 +14,7 @@ import { setCardFields, toggleCardRef, deleteCard } from './thunks.js';
 import { useCardDraft } from './useCardDraft.js';
 import { useEditingSignal } from './useEditingSignal.js';
 import { ConflictBanner } from './ConflictBanner.jsx';
+import { Comments } from './Comments.jsx';
 
 /** /b/:boardId/c/:cardId — rendered in the board's <Outlet>. */
 export function CardModalRoute() {
@@ -133,6 +134,8 @@ function CardModal({ card, editable, close }) {
             </div>
           )}
           {editable && <p className="muted save-status" aria-live="polite">{status}</p>}
+
+          <Comments cardId={card._id} editable={editable} onCardGone={() => { toast('This card was deleted'); close(); }} />
         </div>
 
         <aside className="card-modal__side">

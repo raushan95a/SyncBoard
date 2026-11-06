@@ -229,3 +229,29 @@ h2.card-modal__title { border: 0; background: none; padding: 0; }
   .pill { background: #4a3510; color: #f5d98b; }
   .banner--conflict { background: #4a1d1b; color: #f8c4c1; }
 }
+
+/* Members, labels, archive, comments (F9–F13) */
+.board-menu { display: flex; gap: .15rem; margin-left: .5rem; flex-wrap: wrap; }
+.small { font-size: .8rem; }
+.input--sm { width: auto; padding: .3rem .45rem; }
+.member-list, .label-list, .archive-list, .comments__list { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.member-list li { display: flex; align-items: center; gap: .6rem; }
+.member-list__who { display: flex; flex-direction: column; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.invite__row { display: flex; gap: .4rem; flex-wrap: wrap; }
+.invite__row .input[type='email'] { flex: 1 1 200px; width: auto; }
+.label-row { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.label-row .input { flex: 1 1 140px; width: auto; }
+.label-row__chip { width: 28px; height: 18px; border-radius: 4px; flex: none; }
+.label-row--new { padding-top: .75rem; border-top: 1px solid var(--border); }
+.swatches { display: flex; gap: .25rem; flex-wrap: wrap; }
+.swatch { width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.swatch--on { border-color: var(--fg); }
+.archive-list li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .4rem 0; border-bottom: 1px solid var(--border); }
+.archive-list__actions { display: flex; gap: .3rem; flex: none; }
+.comments { margin-top: 1.5rem; }
+.comments__form { display: flex; flex-direction: column; align-items: flex-start; gap: .4rem; margin-bottom: 1rem; }
+.comment { display: flex; gap: .6rem; align-items: flex-start; }
+.comment__main { flex: 1; min-width: 0; }
+.comment__head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.comment__body { margin: .2rem 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.btn--xs { padding: .05rem .4rem; font-size: .75rem; }

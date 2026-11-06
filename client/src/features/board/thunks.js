@@ -14,17 +14,22 @@ import { sendSerial } from './sendSerial.js';
  * serial queue, then confirm or roll back. Comments (Phase 6) are the only non-optimistic writes.
  */
 
+/** Server messages that are generic defaults; anything else from the server is specific and shown as is. */
+const GENERIC = new Set(['Not found', 'Conflict', 'Something went wrong', 'Invalid input']);
+
 export function messageFor(error, fallback) {
+  const specific = error?.message && !GENERIC.has(error.message) ? error.message : null;
   switch (error?.code) {
-    case 'NOT_FOUND': return 'That item no longer exists';
-    case 'FORBIDDEN': return 'You don\'t have permission to do that';
-    case 'CONFLICT': return 'Someone else changed this card. Showing their version.';
-    case 'LIMIT_REACHED':
-    case 'LIST_ARCHIVED': return error.message;
+    case 'NOT_FOUND': return specific ?? 'That item no longer exists';
+    case 'FORBIDDEN': return "You don't have permission to do that";
+    case 'CONFLICT': return specific ?? 'Someone else changed this. Showing the latest version.';
     case 'RATE_LIMITED': return 'Too many requests. Slow down a little.';
     case 'NETWORK':
-    case 'TIMEOUT': return error.message;
-    default: return fallback || error?.message || 'Something went wrong';
+    case 'TIMEOUT':
+    case 'LIMIT_REACHED':
+    case 'LIST_ARCHIVED':
+    case 'LAST_OWNER': return error.message;
+    default: return fallback || specific || 'Something went wrong';
   }
 }
 
@@ -212,3 +217,56 @@ export const deleteCard = (cardId) => runOp({
   send: (mid) => http.del(`/cards/${cardId}?clientMutationId=${mid}`),
   error: 'Could not delete the card',
 });
+
+// ---- labels (optimistic ops on the board entity; editors) --------------------------------
+
+export const createLabel = ({ name, color }) => (dispatch, getState) => {
+  const id = board(getState).meta._id;
+  const _id = new ObjectId().toHexString();
+  return dispatch(runOp({
+    kind: 'board', entityId: id, op: { type: 'upsertItem', key: 'labels', item: { _id, name, color } },
+    send: (mid) => http.post(`/boards/${id}/labels`, { _id, name, color, clientMutationId: mid }),
+    error: 'Could not add the label',
+  }));
+};
+
+export const updateLabel = (labelId, set) => (dispatch, getState) => {
+  const id = board(getState).meta._id;
+  return dispatch(runOp({
+    kind: 'board', entityId: id, op: { type: 'upsertItem', key: 'labels', item: { _id: labelId, ...set } },
+    send: (mid) => http.patch(`/boards/${id}/labels/${labelId}`, { ...set, clientMutationId: mid }),
+    error: 'Could not update the label',
+  }));
+};
+
+/** Card faces only render labels the board still has, so the cards' labelIds can wait for the echo. */
+export const deleteLabel = (labelId) => (dispatch, getState) => {
+  const id = board(getState).meta._id;
+  return dispatch(runOp({
+    kind: 'board', entityId: id, op: { type: 'removeItem', key: 'labels', id: labelId },
+    send: (mid) => http.del(`/boards/${id}/labels/${labelId}?clientMutationId=${mid}`),
+    error: 'Could not delete the label',
+  }));
+};
+
+// ---- members (pessimistic: owner-only, rare, and they change who can see the board) -----
+
+/** Runs a request, toasting failures. Resolves { ok, data } | { ok: false, error }. */
+async function attempt(fn, fallback) {
+  try {
+    return { ok: true, data: await fn() };
+  } catch (err) {
+    if (err?.status !== 401) toast.error(messageFor(err, fallback));
+    return { ok: false, error: err };
+  }
+}
+
+export const inviteMember = (email, role) => (_d, getState) =>
+  attempt(() => http.post(`/boards/${board(getState).meta._id}/members`, { email, role }), 'Could not add that person');
+
+export const changeMemberRole = (userId, role) => (_d, getState) =>
+  attempt(() => http.patch(`/boards/${board(getState).meta._id}/members/${userId}`, { role }), 'Could not change the role');
+
+/** Remove someone (owner), or leave the board (userId = me). */
+export const removeMember = (userId) => (_d, getState) =>
+  attempt(() => http.del(`/boards/${board(getState).meta._id}/members/${userId}`), 'Could not remove that member');

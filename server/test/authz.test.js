@@ -7,7 +7,7 @@ import { Card } from '../src/models/Card.js';
  * Authorization matrix (docs/08): non-member → 404 on everything; viewer → 403 on every
  * mutation; viewer can read; unauthenticated → 401.
  */
-let owner, viewer, stranger, board, list, card, label;
+let owner, viewer, stranger, board, list, card, label, comment;
 
 beforeAll(async () => {
   owner = await newUser('Owner');
@@ -19,6 +19,7 @@ beforeAll(async () => {
   label = board.board.labels[0];
   const res = await owner.agent.post(`/api/lists/${list._id}/cards`).send({ title: 'Card' }).expect(201);
   card = res.body.data.card;
+  comment = (await owner.agent.post(`/api/cards/${card._id}/comments`).send({ body: 'c' }).expect(201)).body.data.comment;
 });
 
 const mutations = () => [
@@ -37,10 +38,20 @@ const mutations = () => [
   ['DELETE', `/api/cards/${card._id}/labels/${label._id}`],
   ['PATCH', `/api/cards/${card._id}/move`, { toListId: list._id }],
   ['DELETE', `/api/cards/${card._id}`],
+  ['POST', `/api/boards/${board.board._id}/members`, { email: 'x@y.io', role: 'editor' }],
+  ['PATCH', `/api/boards/${board.board._id}/members/${owner.user._id}`, { role: 'editor' }],
+  ['DELETE', `/api/boards/${board.board._id}/members/${owner.user._id}`],
+  ['POST', `/api/boards/${board.board._id}/labels`, { color: 'red' }],
+  ['PATCH', `/api/boards/${board.board._id}/labels/${label._id}`, { name: 'x' }],
+  ['DELETE', `/api/boards/${board.board._id}/labels/${label._id}`],
+  ['POST', `/api/cards/${card._id}/comments`, { body: 'hi' }],
+  ['DELETE', `/api/comments/${comment._id}`],
 ];
 const reads = () => [
   ['GET', `/api/boards/${board.board._id}`],
   ['GET', `/api/cards/${card._id}`],
+  ['GET', `/api/boards/${board.board._id}/archived`],
+  ['GET', `/api/cards/${card._id}/comments`],
 ];
 
 function call(agent, [method, path, body]) {

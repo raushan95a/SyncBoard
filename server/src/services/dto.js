@@ -29,3 +29,23 @@ export const toBoardMetaDTO = (board) => ({
   title: board.title,
   labels: (board.labels ?? []).map((l) => ({ _id: String(l._id), name: l.name, color: l.color })),
 });
+
+/** One member as `member:added` / `member:updated` carry it (user fields included). */
+export const toMemberDTO = (user, role) => ({
+  userId: String(user._id), role, name: user.name, email: user.email, avatarColor: user.avatarColor,
+});
+
+/** A comment with its author's display fields. `authorId` populated → author; a deleted user → null. */
+export function toCommentDTO(c) {
+  const a = c.authorId;
+  const populated = a && typeof a === 'object' && 'name' in a;
+  return {
+    _id: String(c._id),
+    cardId: String(c.cardId),
+    boardId: String(c.boardId),
+    authorId: populated ? String(a._id) : (a ? String(a) : null),
+    author: populated ? { _id: String(a._id), name: a.name, avatarColor: a.avatarColor } : null,
+    body: c.body,
+    createdAt: c.createdAt,
+  };
+}

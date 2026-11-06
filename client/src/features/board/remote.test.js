@@ -188,3 +188,33 @@ describe('indirect changes reach the confirmed base (ADR-016)', () => {
     });
   }
 });
+
+describe('label ops on the board entity (F13)', () => {
+  it('optimistic create → board:updated echo confirms it; ops and base cleared', () => {
+    const item = { _id: 'lab2', name: 'New', color: 'sky' };
+    run(start('L1', 'board', BOARD, { type: 'upsertItem', key: 'labels', item }));
+    expect(state.meta.labels.map((l) => l._id)).toEqual([LABEL, 'lab2']);
+    run(evt(EVT.BOARD_UPDATED, { board: { _id: BOARD, title: 'B', labels: [{ _id: LABEL, name: 'Bug', color: 'red' }, item] }, clientMutationId: 'L1' }));
+    expect(state.ops).toEqual([]);
+    expect(state.bases).toEqual({});
+    expect(state.meta.labels).toHaveLength(2);
+  });
+
+  it('optimistic delete → label:deleted echo also strips it from cards', () => {
+    run(start('D1', 'board', BOARD, { type: 'removeItem', key: 'labels', id: LABEL }));
+    expect(state.meta.labels).toEqual([]);
+    expect(state.cards.byId.a.labelIds).toEqual([LABEL]);     // card faces hide it already; cleaned on echo
+    run(evt(EVT.LABEL_DELETED, { labelId: LABEL, clientMutationId: 'D1' }));
+    expect(state.cards.byId.a.labelIds).toEqual([]);
+    expect(state.ops).toEqual([]);
+    expect(state.bases).toEqual({});
+  });
+
+  it('a failed rename rolls back, keeping a teammate\'s concurrent label change', () => {
+    run(start('R1', 'board', BOARD, { type: 'upsertItem', key: 'labels', item: { _id: LABEL, name: 'Mine' } }));
+    run(evt(EVT.BOARD_UPDATED, { board: { _id: BOARD, title: 'B', labels: [{ _id: LABEL, name: 'Bug', color: 'pink' }] } }));
+    expect(state.meta.labels[0]).toEqual({ _id: LABEL, name: 'Mine', color: 'pink' });
+    run(opFailed({ mid: 'R1' }));
+    expect(state.meta.labels[0]).toEqual({ _id: LABEL, name: 'Bug', color: 'pink' });
+  });
+});

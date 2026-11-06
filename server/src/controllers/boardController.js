@@ -1,6 +1,9 @@
 import * as boards from '../services/boardService.js';
 import * as lists from '../services/listService.js';
 import * as cards from '../services/cardService.js';
+import * as members from '../services/memberService.js';
+import * as labels from '../services/labelService.js';
+import * as comments from '../services/commentService.js';
 
 /** Who did it, and the client's id for recognising its own echo (docs/04). */
 const ctx = (req) => ({
@@ -18,6 +21,22 @@ export const createBoard = async (req, res) => res.status(201).json({ data: { bo
 export const getBoard = async (req, res) => res.json({ data: { ...(await boards.getBoard(req.boardId)), myRole: req.boardRole } });
 export const renameBoard = async (req, res) => send(req, res, await boards.renameBoard(req.boardId, req.valid.body, ctx(req)));
 export const deleteBoard = async (req, res) => res.json({ data: await boards.deleteBoard(req.boardId, req.user) });
+export const getArchived = async (req, res) => res.json({ data: await boards.getArchived(req.boardId) });
+
+// ---- members
+export const addMember = async (req, res) => send(req, res, await members.addMember(req.boardId, req.valid.body, ctx(req)), 201);
+export const updateMember = async (req, res) => send(req, res, await members.updateMemberRole(req.boardId, req.valid.params.userId, req.valid.body, ctx(req)));
+export const removeMember = async (req, res) => send(req, res, await members.removeMember(req.boardId, req.valid.params.userId, ctx(req)));
+
+// ---- labels
+export const createLabel = async (req, res) => send(req, res, await labels.createLabel(req.boardId, req.valid.body, ctx(req)), 201);
+export const updateLabel = async (req, res) => send(req, res, await labels.updateLabel(req.boardId, req.valid.params.labelId, req.valid.body, ctx(req)));
+export const deleteLabel = async (req, res) => send(req, res, await labels.deleteLabel(req.boardId, req.valid.params.labelId, ctx(req)));
+
+// ---- comments
+export const listComments = async (req, res) => res.json({ data: await comments.listComments(req.card._id, req.valid.query) });
+export const createComment = async (req, res) => send(req, res, await comments.createComment(req.card, req.valid.body, ctx(req)), 201);
+export const deleteComment = async (req, res) => send(req, res, await comments.deleteComment(req.comment, ctx(req)));
 
 // ---- lists
 export const createList = async (req, res) => created(req, res, await lists.createList(req.boardId, req.valid.body, ctx(req)));

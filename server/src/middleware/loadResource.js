@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { List } from '../models/List.js';
 import { Card } from '../models/Card.js';
 import { Board } from '../models/Board.js';
+import { Comment } from '../models/Comment.js';
 import { ApiError } from '../utils/ApiError.js';
 import { RANK } from '@syncboard/shared/roles';
 
@@ -24,10 +25,25 @@ export async function loadList(req, _res, next) {
 }
 
 export async function loadCard(req, _res, next) {
-  const card = await Card.findById(req.valid.params.id).lean();
+  const card = await Card.findById(req.valid.params.id ?? req.valid.params.cardId).lean();
   if (!card) throw new ApiError(404, 'NOT_FOUND');
   req.card = card;
   req.boardId = card.boardId;
+  next();
+}
+
+export async function loadComment(req, _res, next) {
+  const comment = await Comment.findById(req.valid.params.id).lean();
+  if (!comment) throw new ApiError(404, 'NOT_FOUND');
+  req.comment = comment;
+  req.boardId = comment.boardId;
+  next();
+}
+
+/** Comments: authors may delete their own; owners may delete any comment (docs/06). */
+export function requireCommentDelete(req, _res, next) {
+  const own = String(req.comment.authorId) === String(req.user.id);
+  if (!own && RANK[req.boardRole] < RANK.owner) throw new ApiError(403, 'FORBIDDEN');
   next();
 }
 

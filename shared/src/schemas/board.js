@@ -69,8 +69,38 @@ export const moveListSchema = z.strictObject(neighbors);
 /** For body-less DELETEs that still want to pass a clientMutationId via the query string. */
 export const mutationQuery = z.strictObject({ clientMutationId });
 
-// ---- labels (Phase 6 routes; schema shared now)
+// ---- members (docs/03 — Members)
+const role = z.enum(['owner', 'editor', 'viewer']);
+export const memberParams = z.strictObject({ id: objectId, userId: objectId });
+export const inviteMemberSchema = z.strictObject({
+  email: z.string().trim().toLowerCase().email('Enter a valid email'),
+  role: role.default('editor'),
+  clientMutationId,
+});
+export const updateMemberSchema = z.strictObject({ role, clientMutationId });
+
+// ---- labels (docs/03 — Labels). _id is optional and client-generated, so creates can be optimistic.
+const labelName = z.string().trim().max(LIMITS.LABEL_NAME);
+export const labelParams = z.strictObject({ id: objectId, labelId: objectId });
 export const labelSchema = z.strictObject({
-  name: z.string().trim().max(LIMITS.LABEL_NAME).default(''),
+  _id: objectId.optional(),
+  name: labelName.default(''),
   color: z.enum(LABEL_COLORS),
+  clientMutationId,
+});
+export const updateLabelSchema = z.strictObject({
+  name: labelName.optional(),
+  color: z.enum(LABEL_COLORS).optional(),
+  clientMutationId,
+}).refine((b) => b.name !== undefined || b.color !== undefined, 'Nothing to update');
+
+// ---- comments (docs/03 — Comments)
+export const cardIdParams = z.strictObject({ cardId: objectId });
+export const commentsQuery = z.strictObject({
+  cursor: objectId.optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(LIMITS.COMMENTS_PAGE),
+});
+export const createCommentSchema = z.strictObject({
+  body: z.string().trim().min(1, 'Write something first').max(LIMITS.COMMENT),
+  clientMutationId,
 });

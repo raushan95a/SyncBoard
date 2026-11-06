@@ -7,6 +7,7 @@ import { Comment } from '../models/Comment.js';
 import { mutateBoard } from './mutateBoard.js';
 import { appendCardPosition, placeCard } from './positions.js';
 import { findReplay, retryOnDuplicate } from './idempotentCreate.js';
+import { listComments } from './commentService.js';
 import { publish } from '../sockets/publisher.js';
 import { ApiError } from '../utils/ApiError.js';
 
@@ -49,10 +50,7 @@ export async function createCard(listId, boardId, { _id, title }, ctx) {
 
 /** Card plus the first page of comments (newest first). Archived cards are readable too. */
 export async function getCard(card) {
-  const page = await Comment.find({ cardId: card._id }).sort({ _id: -1 }).limit(LIMITS.COMMENTS_PAGE + 1).lean();
-  const hasMore = page.length > LIMITS.COMMENTS_PAGE;
-  const comments = page.slice(0, LIMITS.COMMENTS_PAGE);
-  return { card, comments, nextCursor: hasMore ? String(comments.at(-1)._id) : null };
+  return { card, ...(await listComments(card._id)) };
 }
 
 /**

@@ -17,6 +17,8 @@ export const DELETED = 'DELETED';
  *   | { type: 'fields', set: object }
  *   | { type: 'addTo', key: string, id: string }
  *   | { type: 'pullFrom', key: string, id: string }
+ *   | { type: 'upsertItem', key: string, item: { _id: string } }   e.g. board labels
+ *   | { type: 'removeItem', key: string, id: string }
  *   | { type: 'delete' }} Op
  */
 
@@ -38,6 +40,12 @@ export function applyOp(entity, op) {
     case 'fields':   return { ...entity, ...op.set };
     case 'addTo':    return { ...entity, [op.key]: [...new Set([...(entity[op.key] ?? []), op.id])] };
     case 'pullFrom': return { ...entity, [op.key]: (entity[op.key] ?? []).filter((x) => x !== op.id) };
+    case 'upsertItem': {
+      const items = entity[op.key] ?? [];
+      const i = items.findIndex((x) => x._id === op.item._id);
+      return { ...entity, [op.key]: i === -1 ? [...items, op.item] : items.map((x, j) => (j === i ? { ...x, ...op.item } : x)) };
+    }
+    case 'removeItem': return { ...entity, [op.key]: (entity[op.key] ?? []).filter((x) => x._id !== op.id) };
     case 'delete':   return DELETED;
     default:         return entity;
   }

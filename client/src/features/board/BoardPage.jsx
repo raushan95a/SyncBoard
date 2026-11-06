@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
@@ -16,6 +16,7 @@ import {
 } from './selectors.js';
 import { useBoardSocket } from './useBoardSocket.js';
 import { ListColumn } from './ListColumn.jsx';
+import { MembersDialog, LabelsEditor, ArchivePanel } from './BoardDialogs.jsx';
 
 const GONE_TEXT = {
   'not-found': ['Board not found', 'It may have been deleted, or you no longer have access.'],
@@ -88,6 +89,8 @@ function BoardView({ boardId, pauseDrag, resumeDrag }) {
   const online = useSelector(selectConnection) === 'online';
   const editable = canEdit(myRole);
   const canDrag = editable && online;
+  const [dialog, setDialog] = useState(null);       // 'members' | 'labels' | 'archive'
+  const closeDialog = useCallback(() => setDialog(null), []);
   const isOwner = canManageBoard(myRole);
 
   const deleteBoard = async () => {
@@ -139,7 +142,12 @@ function BoardView({ boardId, pauseDrag, resumeDrag }) {
           label="board title" onSave={(title) => dispatch(renameBoard(title))} />
         {myRole === 'viewer' && <span className="badge">View only</span>}
         <PresenceBar />
-        {isOwner && <button className="btn btn--ghost btn--danger" onClick={deleteBoard}>Delete board</button>}
+        <nav className="board-menu" aria-label="Board menu">
+          <button className="btn btn--ghost" onClick={() => setDialog('members')}>Members</button>
+          {editable && <button className="btn btn--ghost" onClick={() => setDialog('labels')}>Labels</button>}
+          <button className="btn btn--ghost" onClick={() => setDialog('archive')}>Archive</button>
+          {isOwner && <button className="btn btn--ghost btn--danger" onClick={deleteBoard}>Delete board</button>}
+        </nav>
       </AppHeader>
       <ConnectionBanner />
 
@@ -163,6 +171,10 @@ function BoardView({ boardId, pauseDrag, resumeDrag }) {
           )}
         </Droppable>
       </DragDropContext>
+
+      {dialog === 'members' && <MembersDialog isOwner={isOwner} onClose={closeDialog} />}
+      {dialog === 'labels' && editable && <LabelsEditor onClose={closeDialog} />}
+      {dialog === 'archive' && <ArchivePanel editable={editable} onClose={closeDialog} />}
 
       {/* /b/:boardId/c/:cardId renders the card modal over the board */}
       <Outlet context={{ editable, boardId }} />

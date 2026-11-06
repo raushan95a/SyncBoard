@@ -15,6 +15,10 @@ describe('applyOp', () => {
     expect(applyOp(frozen, { type: 'addTo', key: 'labelIds', id: 'x' }).labelIds).toEqual(['x']);
     expect(applyOp(frozen, { type: 'pullFrom', key: 'labelIds', id: 'x' }).labelIds).toEqual([]);
     expect(applyOp(frozen, { type: 'delete' })).toBe(DELETED);
+    const board = Object.freeze({ labels: Object.freeze([{ _id: 'l1', name: 'A', color: 'red' }]) });
+    expect(applyOp(board, { type: 'upsertItem', key: 'labels', item: { _id: 'l1', name: 'B' } }).labels).toEqual([{ _id: 'l1', name: 'B', color: 'red' }]);
+    expect(applyOp(board, { type: 'upsertItem', key: 'labels', item: { _id: 'l2', name: '', color: 'sky' } }).labels).toHaveLength(2);
+    expect(applyOp(board, { type: 'removeItem', key: 'labels', id: 'l1' }).labels).toEqual([]);
   });
 
   it('DELETED stays deleted; ops on a missing entity are no-ops; create makes it', () => {
