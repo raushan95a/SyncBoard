@@ -1,0 +1,31 @@
+{
+  "name": "@syncboard/client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
+    "@reduxjs/toolkit": "^2.14.0",
+    "@syncboard/shared": "^0.0.0",
+    "bson-objectid": "^2.0.4",
+    "nanoid": "^6.0.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-hot-toast": "^2.6.1",
+    "react-markdown": "^10.1.0",
+    "react-redux": "^9.3.1",
+    "react-router-dom": "^7.18.5",
+    "socket.io-client": "^4.8.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.2.1",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}

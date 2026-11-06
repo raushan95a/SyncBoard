@@ -1,0 +1,25 @@
+{
+  "name": "@syncboard/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./events": "./src/events.js",
+    "./position": "./src/position.js",
+    "./roles": "./src/roles.js",
+    "./limits": "./src/limits.js",
+    "./schemas": "./src/schemas/index.js",
+    "./types": "./src/types.js"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fractional-indexing": "^4.0.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}
