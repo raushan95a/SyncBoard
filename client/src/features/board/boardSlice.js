@@ -32,6 +32,10 @@ const initialState = {
   bases: {},
   /** @type {PendingOp[]} */
   ops: [],
+  // Advisory collaboration state (F14) — never affects correctness.
+  presence: [],              // [{ id, name, avatarColor }] viewing this board, deduplicated
+  editing: {},               // cardId → { [userId]: user } currently editing that card
+  lastActor: {},             // cardId → actorId of the latest confirmed content change ("changed by X")
 };
 
 const boardSlice = createSlice({
@@ -99,6 +103,22 @@ const boardSlice = createSlice({
 
     connectionChanged(state, { payload }) {
       state.connection = payload;
+      if (payload !== 'online') {     // stale while offline; the server re-sends on rejoin
+        state.presence = [];
+        state.editing = {};
+      }
+    },
+
+    presenceUpdated(state, { payload }) {
+      if (payload.boardId === state.boardId) state.presence = payload.users;
+    },
+
+    editingUpdated(state, { payload: { cardId, user, editing } }) {
+      const who = { ...(state.editing[cardId] ?? {}) };
+      if (editing) who[user.id] = user;
+      else delete who[user.id];
+      if (Object.keys(who).length) state.editing[cardId] = who;
+      else delete state.editing[cardId];
     },
 
     /** User action: remember the confirmed value (first op only), push the op, apply it. */
@@ -159,7 +179,7 @@ const boardSlice = createSlice({
 });
 
 export const {
-  boardLoading, boardLoadFailed, boardLoaded, remoteEvent, boardGone, connectionChanged,
+  boardLoading, boardLoadFailed, boardLoaded, remoteEvent, boardGone, connectionChanged, presenceUpdated, editingUpdated,
   opStarted, opSent, opAcked, opFailed, opConfirmed, boardLeft,
 } = boardSlice.actions;
 export default boardSlice.reducer;

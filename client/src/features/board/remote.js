@@ -29,6 +29,7 @@ export function applyEvent(state, type, p, { myUserId } = {}) {
     case EVT.CARD_UPDATED:
       applyRebalanced(state, 'card', p.rebalanced);
       confirmEntity(state, 'card', p.card._id, p.card);
+      state.lastActor[p.card._id] = p.actorId;
       break;
     case EVT.CARD_MOVED:
       applyRebalanced(state, 'card', p.rebalanced);

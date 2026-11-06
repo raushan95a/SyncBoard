@@ -212,3 +212,20 @@ h2.card-modal__title { border: 0; background: none; padding: 0; }
 
 /* Connection banner (docs/11 F16) */
 .banner--conn { margin: .5rem 1rem 0; }
+
+/* Collaboration (F7, F14) */
+.presence { display: flex; list-style: none; margin: 0 0 0 .5rem; padding: 0; }
+.presence li { margin-left: -6px; border-radius: 50%; box-shadow: 0 0 0 2px var(--surface); }
+.presence li:first-child { margin-left: 0; }
+.presence__more { font-size: .75rem; color: var(--muted); padding: 0 .4rem; box-shadow: none !important; }
+.card__editing { font-size: .75rem; color: var(--primary); }
+.editing-note { margin: 0 0 .75rem; font-size: .85rem; color: var(--primary); }
+.field-row { display: flex; align-items: center; gap: .5rem; }
+.pill { display: inline-block; font-size: .72rem; font-weight: 500; padding: .1rem .5rem; border-radius: 999px; background: #fde7c4; color: #6b4300; white-space: nowrap; }
+.banner--conflict { background: #fde2e1; color: #7a1d1a; justify-content: space-between; }
+.banner__actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+.save-status { font-size: .8rem; margin: .4rem 0 0; }
+@media (prefers-color-scheme: dark) {
+  .pill { background: #4a3510; color: #f5d98b; }
+  .banner--conflict { background: #4a1d1b; color: #f8c4c1; }
+}

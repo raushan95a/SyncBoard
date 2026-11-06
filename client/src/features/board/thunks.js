@@ -48,8 +48,9 @@ const board = (getState) => getState().board;
  * @param {(mid: string, getState: () => any) => Promise<any>} o.send  runs when the queue reaches it
  * @param {string[]} [o.waitFor]            other entities whose queues must drain first
  * @param {string} o.error                  toast text on failure
+ * @param {(err: any) => boolean} [o.quiet] errors the caller handles itself (no toast)
  */
-const runOp = ({ kind, entityId, op, send, waitFor = [], error }) => (dispatch, getState) => {
+const runOp = ({ kind, entityId, op, send, waitFor = [], error, quiet = () => false }) => (dispatch, getState) => {
   const mid = nanoid();
   dispatch(opStarted({ mid, kind, entityId, op }));
   return sendSerial([entityId, ...waitFor], () => {
@@ -63,7 +64,7 @@ const runOp = ({ kind, entityId, op, send, waitFor = [], error }) => (dispatch, 
     })
     .catch((err) => {
       dispatch(opFailed({ mid, current: err?.code === 'CONFLICT' ? err.details?.current : undefined }));
-      if (err?.status !== 401) toast.error(messageFor(err, error));
+      if (err?.status !== 401 && !quiet(err)) toast.error(messageFor(err, error));
       return { ok: false, error: err };
     });
 };
@@ -167,13 +168,16 @@ export const moveCard = ({ cardId, toListId, beforeId, afterId }) => (dispatch, 
 };
 
 /**
- * Title/description, compare-and-set. The version is read when the request is SENT: the newest of
- * the confirmed base and any acked-but-not-yet-echoed response, so a second save (which waits for
- * the first) uses the version the first one produced.
+ * Title/description, compare-and-set. The card modal passes the version its draft is based on
+ * (docs/05), and handles a 409 itself (three-way merge / conflict banner), so no toast for it.
+ * Without an explicit version, it's read when the request is SENT: the newest of the confirmed
+ * base and any acked-but-not-yet-echoed response.
  */
-export const saveContent = (cardId, fields) => runOp({
+export const saveContent = (cardId, fields, { version: explicit } = {}) => runOp({
   kind: 'card', entityId: cardId, op: { type: 'content', fields },
+  quiet: (err) => err?.code === 'CONFLICT',
   send: (mid, getState) => {
+    if (explicit !== undefined) return http.patch(`/cards/${cardId}/content`, { ...fields, version: explicit, clientMutationId: mid });
     const s = board(getState);
     const confirmed = cardId in s.bases ? s.bases[cardId] : s.cards.byId[cardId];
     const acked = s.ops.filter((o) => o.entityId === cardId && o.version !== undefined).map((o) => o.version);

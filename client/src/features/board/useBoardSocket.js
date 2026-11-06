@@ -3,7 +3,7 @@ import { useDispatch, useStore } from 'react-redux';
 import { EVT, REVISIONED_EVENTS } from '@syncboard/shared/events';
 import { getSocket } from '../../api/socket.js';
 import { createEventPipeline } from './eventPipeline.js';
-import { boardGone, boardLeft, connectionChanged, remoteEvent } from './boardSlice.js';
+import { boardGone, boardLeft, connectionChanged, editingUpdated, presenceUpdated, remoteEvent } from './boardSlice.js';
 import { loadBoard } from './thunks.js';
 
 const JOIN_TIMEOUT_MS = 10_000;
@@ -55,6 +55,9 @@ export function useBoardSocket(boardId) {
     const onDisconnect = () => dispatch(connectionChanged('reconnecting'));
 
     const handlers = Object.fromEntries(REVISIONED_EVENTS.map((e) => [e, (p) => pipeline.push(e, p)]));
+    // Not revisioned: advisory, applied immediately, outside the ordered stream (docs/04).
+    handlers[EVT.PRESENCE_UPDATE] = (p) => dispatch(presenceUpdated(p));
+    handlers[EVT.CARD_EDITING] = (p) => dispatch(editingUpdated(p));
     handlers[EVT.BOARD_DELETED] = (p) => p.boardId === boardId && dispatch(boardGone({ boardId, reason: 'deleted', by: p.actorName }));
     handlers[EVT.ACCESS_REVOKED] = (p) => p.boardId === boardId && dispatch(boardGone({ boardId, reason: 'removed' }));
 

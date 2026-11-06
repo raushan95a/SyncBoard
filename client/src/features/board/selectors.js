@@ -18,3 +18,9 @@ export const selectCard = (s, id) => s.board.cards.byId[id];
 /** Visible (rendered) card ids of a list, in display order. Phase 7 adds filters here. */
 export const selectCardIds = (s, listId) => s.board.cardIdsByList[listId] ?? EMPTY;
 export const selectPendingCount = (s) => s.board.ops.length;
+export const selectPresence = (s) => s.board.presence;
+/** The CONFIRMED card (without my pending ops): what teammates' changes look like. */
+export const selectConfirmedCard = (s, id) => (id in s.board.bases ? s.board.bases[id] : s.board.cards.byId[id]);
+export const selectLastActor = (s, id) => s.board.lastActor[id];
+const NO_EDITORS = Object.freeze({});
+export const selectEditors = (s, cardId) => s.board.editing[cardId] ?? NO_EDITORS;

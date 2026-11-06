@@ -6,7 +6,8 @@ import { LIMITS } from '@syncboard/shared/limits';
 import { EditableText, InlineAdd } from '../../components/ui/InlineForm.jsx';
 import { Avatar } from '../../components/ui/Avatar.jsx';
 import { LABEL_HEX, dueState, formatDue } from './cardUtils.js';
-import { selectList, selectCardIds, selectCard, selectLabels, selectMembers } from './selectors.js';
+import { selectList, selectCardIds, selectCard, selectLabels, selectMembers, selectEditors } from './selectors.js';
+import { selectUser } from '../auth/authSlice.js';
 import { renameList, archiveList, deleteList, createCard } from './thunks.js';
 
 /**
@@ -62,7 +63,10 @@ const CardItem = memo(function CardItem({ cardId, index, canDrag }) {
   const card = useSelector((s) => selectCard(s, cardId));
   const allLabels = useSelector(selectLabels);
   const members = useSelector(selectMembers);
+  const editors = useSelector((s) => selectEditors(s, cardId));
+  const myId = useSelector(selectUser)?._id;
   if (!card) return null;
+  const editingBy = Object.values(editors).filter((u) => u.id !== myId);
 
   const labels = allLabels.filter((l) => card.labelIds.includes(l._id));
   const assignees = members.filter((m) => card.assigneeIds.includes(m.userId));
@@ -80,6 +84,7 @@ const CardItem = memo(function CardItem({ cardId, index, canDrag }) {
               </span>
             )}
             <span className="card__title">{card.title}</span>
+            {editingBy.length > 0 && <span className="card__editing">✎ {editingBy.map((u) => u.name).join(', ')} editing…</span>}
             {(due || card.description || card.commentCount > 0 || assignees.length > 0) && (
               <span className="card__meta">
                 {due && <span className={`chip chip--${due}`}>{due === 'done' ? '✓ ' : ''}{formatDue(card.dueDate)}</span>}

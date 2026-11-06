@@ -7,10 +7,12 @@ import { canEdit, canManageBoard } from '@syncboard/shared/roles';
 import { LIMITS } from '@syncboard/shared/limits';
 import { http } from '../../api/http.js';
 import { AppHeader } from '../../components/AppHeader.jsx';
+import { Avatar } from '../../components/ui/Avatar.jsx';
 import { EditableText, InlineAdd } from '../../components/ui/InlineForm.jsx';
 import { renameBoard, createList, moveList, moveCard, messageFor } from './thunks.js';
 import {
   selectBoardStatus, selectBoardError, selectGone, selectConnection, selectMeta, selectMyRole, selectListOrder, selectCardIds,
+  selectPresence,
 } from './selectors.js';
 import { useBoardSocket } from './useBoardSocket.js';
 import { ListColumn } from './ListColumn.jsx';
@@ -62,6 +64,18 @@ function ConnectionBanner() {
   const connection = useSelector(selectConnection);
   if (connection === 'online') return null;
   return <div className="banner banner--warn banner--conn" role="status">Reconnecting… changes from others will appear when the connection is back.</div>;
+}
+
+/** Who's viewing this board right now: one avatar per user, however many tabs (F14). */
+function PresenceBar() {
+  const users = useSelector(selectPresence);
+  if (!users.length) return null;
+  return (
+    <ul className="presence" aria-label={`${users.length} viewing`}>
+      {users.slice(0, 8).map((u) => <li key={u.id} title={u.name}><Avatar user={u} size={26} /></li>)}
+      {users.length > 8 && <li className="presence__more">+{users.length - 8}</li>}
+    </ul>
+  );
 }
 
 function BoardView({ boardId, pauseDrag, resumeDrag }) {
@@ -124,6 +138,7 @@ function BoardView({ boardId, pauseDrag, resumeDrag }) {
         <EditableText as="h1" className="board__title" value={meta.title} editable={isOwner} maxLength={LIMITS.BOARD_TITLE}
           label="board title" onSave={(title) => dispatch(renameBoard(title))} />
         {myRole === 'viewer' && <span className="badge">View only</span>}
+        <PresenceBar />
         {isOwner && <button className="btn btn--ghost btn--danger" onClick={deleteBoard}>Delete board</button>}
       </AppHeader>
       <ConnectionBanner />

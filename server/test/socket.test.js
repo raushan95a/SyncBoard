@@ -13,7 +13,7 @@ const open = [];
 
 beforeAll(async () => {
   server = http.createServer(app);
-  io = createIO(server);
+  io = createIO(server, { editingTtlMs: 400 });     // short expiry for the editing tests
   await new Promise((r) => server.listen(0, r));
   url = `http://localhost:${server.address().port}`;
 });
@@ -190,5 +190,61 @@ describe('broadcast', () => {
     await a.agent.delete(`/api/boards/${board.board._id}`).expect(200);
     expect(await deleted).toMatchObject({ boardId: board.board._id, actorName: 'A' });
     expect(await changed).toEqual({ boardId: board.board._id, reason: 'deleted' });
+  });
+});
+
+describe('card editing indicator', () => {
+  async function room() {
+    const a = await newClient('A');
+    const b = await newClient('B');
+    const board = await newBoard(a);
+    await addMember(board.board._id, b.user._id, 'editor');
+    const sa = await connected(connect(a.cookie));
+    const sb = await connected(connect(b.cookie));
+    await join(sa, board.board._id);
+    await join(sb, board.board._id);
+    return { a, b, board, sa, sb, cardId: '6aed9c1634595eb0d7249e6c' };
+  }
+
+  it('start → relayed to the others in the room (not back to the sender); stop clears it', async () => {
+    const { a, sa, sb, cardId } = await room();
+    const own = collect(sa, EVT.CARD_EDITING);
+    const on = next(sb, EVT.CARD_EDITING);
+    sa.emit(EVT.CARD_EDITING_START, { cardId });
+    expect(await on).toEqual({ cardId, editing: true, user: expect.objectContaining({ id: a.user._id, name: 'A' }) });
+    const off = next(sb, EVT.CARD_EDITING);
+    sa.emit(EVT.CARD_EDITING_STOP, { cardId });
+    expect(await off).toMatchObject({ cardId, editing: false });
+    await tick();
+    expect(own).toEqual([]);
+  });
+
+  it('expires without a heartbeat; a heartbeat keeps it alive', async () => {
+    const { sa, sb, cardId } = await room();
+    const got = collect(sb, EVT.CARD_EDITING);
+    sa.emit(EVT.CARD_EDITING_START, { cardId });
+    await tick(250);
+    sa.emit(EVT.CARD_EDITING_HEARTBEAT, { cardId });
+    await tick(250);                                   // 500 ms since start, 250 since the heartbeat
+    expect(got.map((e) => e.editing)).toEqual([true]);
+    await tick(300);                                   // 550 ms since the heartbeat → expired
+    expect(got.map((e) => e.editing)).toEqual([true, false]);
+  });
+
+  it('cleared when the editor disconnects; ignored before joining a board', async () => {
+    const { sa, sb, cardId } = await room();
+    const on = next(sb, EVT.CARD_EDITING);
+    sa.emit(EVT.CARD_EDITING_START, { cardId });
+    await on;
+    const off = next(sb, EVT.CARD_EDITING);
+    sa.disconnect();
+    expect(await off).toMatchObject({ cardId, editing: false });
+
+    const c = await newClient('C');
+    const sc = await connected(connect(c.cookie));
+    const heard = collect(sb, EVT.CARD_EDITING);
+    sc.emit(EVT.CARD_EDITING_START, { cardId });       // not in any board → dropped
+    await tick();
+    expect(heard).toEqual([]);
   });
 });

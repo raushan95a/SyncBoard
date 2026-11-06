@@ -73,12 +73,12 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 
 ## Phase 5 — Collaboration UX (2 days) · F7, F14
 
-- [ ] Modal draft/`draftBase` model, debounced serial autosave, the "changed by X" pill on dirty fields
-- [ ] Three-way automatic merge on 409, plus the conflict banner for real conflicts
-- [ ] Flush the draft on close, and back it up to `sessionStorage`
-- [ ] Presence bar (deduplicated); "is editing" with heartbeat and expiry
-- [ ] **Tests:** title-versus-description concurrent edit → no banner, both saved; description-versus-description → banner; component test of the banner's three actions
-- [ ] **Done when:** concurrent edits are never silently overwritten, and edits to different fields never show a conflict
+- [x] Modal draft/`draftBase` model, debounced serial autosave, the "changed by X" pill on dirty fields
+- [x] Three-way automatic merge on 409, plus the conflict banner for real conflicts
+- [x] Flush the draft on close, and back it up to `sessionStorage`
+- [x] Presence bar (deduplicated); "is editing" with heartbeat and expiry
+- [x] **Tests:** title-versus-description concurrent edit → no banner, both saved; description-versus-description → banner; component test of the banner's three actions
+- [ ] **Done when:** concurrent edits are never silently overwritten, and edits to different fields never show a conflict *(merge rules covered by model, hook, and live server tests; two-browser check pending)*
 
 ## Phase 6 — Members, Labels, Comments, Archive (2 days) · F9–F13
 
