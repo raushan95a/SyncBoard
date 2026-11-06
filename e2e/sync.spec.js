@@ -142,9 +142,16 @@ test('a move that fails (server unreachable) snaps back to its confirmed place, 
   const { boardId } = await sharedBoard(alice, bob);
   await openBoard(alice.page, boardId);
   await openBoard(bob.page, boardId);
-  await alice.page.route('**/api/cards/*/move', (route) => route.abort('connectionrefused'));
+  // Hold the request, then fail it, so the optimistic state is observable on fast machines too.
+  let fail;
+  const failed = new Promise((r) => { fail = r; });
+  await alice.page.route('**/api/cards/*/move', async (route) => {
+    await failed;
+    await route.abort('connectionrefused');
+  });
 
   await dragCard(alice.page, 'Task 1', 'Done');                        // instant, optimistic
+  fail();
   await expect(alice.page.getByText('Could not reach the server')).toBeVisible();
   await expect(cardIn(alice.page, 'To Do', 'Task 1')).toBeVisible();   // rolled back
   await expect(cardIn(alice.page, 'Done', 'Task 1')).toHaveCount(0);
