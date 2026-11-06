@@ -44,16 +44,16 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 
 ## Phase 3 — Drag & Drop + Pending-Ops Engine (2–3 days) · F6
 
-- [ ] `PATCH /cards/:id/move` and `/lists/:id/move`: successor-based neighbor resolution (ADR-014), tolerance for stale neighbors, rebalance in the same transaction
-- [ ] Client `ops.js` (`applyOp`), slice with `bases` + `ops`, `opStarted` / `opAcked` / `opFailed`
-- [ ] `sendSerial(entityId, fn)`: one request in flight per entity
-- [ ] Convert create, update, and delete from Phase 2 to ops (optimistic everywhere except comments)
-- [ ] `@hello-pangea/dnd` with `LIST` and `CARD` droppables
-- [ ] **Tests:**
+- [x] `PATCH /cards/:id/move` and `/lists/:id/move`: successor-based neighbor resolution (ADR-014), tolerance for stale neighbors, rebalance in the same transaction
+- [x] Client `ops.js` (`applyOp`), slice with `bases` + `ops`, `opStarted` / `opAcked` / `opFailed`
+- [x] `sendSerial(entityId, fn)`: one request in flight per entity
+- [x] Convert create, update, and delete from Phase 2 to ops (optimistic everywhere except comments)
+- [x] `@hello-pangea/dnd` with `LIST` and `CARD` droppables
+- [x] **Tests:**
   - `position.js` unit tests (between, ends, 1,000 inserts at the same spot stay sorted, `comparePos` matches the MongoDB sort)
   - move integration tests (cross-list, stale neighbor, foreign neighbor → 400, rebalance, two parallel drops into the same gap → **distinct** keys)
   - `ops` reducer tests: toggle and move on the same card, then confirm the first → no jump; fail the second → only it is undone
-- [ ] **Manual:** stop the server mid-drag → the card snaps back and a toast appears
+- [ ] **Manual:** stop the server mid-drag → the card snaps back and a toast appears *(rollback logic covered by reducer tests; browser check pending)*
 - [ ] **Done when:** every action feels instant and rolls back correctly on failure
 
 ## Phase 4 — Real-Time Sync (3 days, the core) · F3, F16

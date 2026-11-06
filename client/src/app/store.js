@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer, { loggedOut } from '../features/auth/authSlice.js';
+import boardReducer from '../features/board/boardSlice.js';
 import { setUnauthorizedHandler } from '../api/http.js';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    board: boardReducer,
   },
 });
 

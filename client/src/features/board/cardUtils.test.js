@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dueState, toLocalInput, fromLocalInput, cardsByList } from './cardUtils.js';
+import { dueState, toLocalInput, fromLocalInput } from './cardUtils.js';
 
 const NOW = Date.parse('2026-11-06T12:00:00.000Z');
 const at = (h) => new Date(NOW + h * 3600 * 1000).toISOString();
@@ -23,12 +23,5 @@ describe('datetime-local conversion', () => {
   it('clears to null', () => {
     expect(toLocalInput(null)).toBe('');
     expect(fromLocalInput('')).toBeNull();
-  });
-});
-
-describe('cardsByList', () => {
-  it('groups cards by list and keeps server order', () => {
-    const cards = [{ _id: 'a', listId: 'L1' }, { _id: 'b', listId: 'L2' }, { _id: 'c', listId: 'L1' }];
-    expect(cardsByList(cards)).toEqual({ L1: [cards[0], cards[2]], L2: [cards[1]] });
   });
 });

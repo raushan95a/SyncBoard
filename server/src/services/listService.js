@@ -5,7 +5,7 @@ import { List } from '../models/List.js';
 import { Card } from '../models/Card.js';
 import { Comment } from '../models/Comment.js';
 import { mutateBoard } from './mutateBoard.js';
-import { appendListPosition } from './positions.js';
+import { appendListPosition, placeList } from './positions.js';
 import { findReplay, retryOnDuplicate } from './idempotentCreate.js';
 import { assertRoleInTx } from '../middleware/loadResource.js';
 import { publish } from '../sockets/publisher.js';
@@ -50,6 +50,19 @@ export async function updateList(listId, boardId, { title, archived }, ctx) {
     return { list, rebalanced };
   });
   publish(boardId, EVT.LIST_UPDATED, { list: result.list, rebalanced: result.rebalanced, ...meta(ctx, result.revision) });
+  return result;
+}
+
+/** Drag a column (docs/03 — Move Semantics). Archived lists can't be moved. */
+export async function moveList(listId, boardId, { beforeId, afterId }, ctx) {
+  const result = await mutateBoard(boardId, async (session) => {
+    const current = await List.findOne({ _id: listId, boardId, archived: false }).session(session).lean();
+    if (!current) throw new ApiError(404, 'NOT_FOUND');
+    const { position, rebalanced } = await placeList({ boardId, listId, beforeId, afterId }, session);
+    const list = await List.findByIdAndUpdate(listId, { $set: { position } }, { returnDocument: 'after', session }).lean();
+    return { list, rebalanced };
+  });
+  publish(boardId, EVT.LIST_MOVED, { list: result.list, rebalanced: result.rebalanced, ...meta(ctx, result.revision) });
   return result;
 }
 

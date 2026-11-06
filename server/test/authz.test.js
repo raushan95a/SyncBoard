@@ -26,6 +26,7 @@ const mutations = () => [
   ['DELETE', `/api/boards/${board.board._id}`],
   ['POST', `/api/boards/${board.board._id}/lists`, { title: 'L' }],
   ['PATCH', `/api/lists/${list._id}`, { title: 'L2' }],
+  ['PATCH', `/api/lists/${list._id}/move`, { beforeId: null, afterId: null }],
   ['DELETE', `/api/lists/${list._id}`],
   ['POST', `/api/lists/${list._id}/cards`, { title: 'C' }],
   ['PATCH', `/api/cards/${card._id}/content`, { title: 'T', version: 0 }],
@@ -34,6 +35,7 @@ const mutations = () => [
   ['DELETE', `/api/cards/${card._id}/assignees/${owner.user._id}`],
   ['POST', `/api/cards/${card._id}/labels`, { labelId: label._id }],
   ['DELETE', `/api/cards/${card._id}/labels/${label._id}`],
+  ['PATCH', `/api/cards/${card._id}/move`, { toListId: list._id }],
   ['DELETE', `/api/cards/${card._id}`],
 ];
 const reads = () => [

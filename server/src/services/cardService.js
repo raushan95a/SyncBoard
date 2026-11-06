@@ -5,7 +5,7 @@ import { List } from '../models/List.js';
 import { Card } from '../models/Card.js';
 import { Comment } from '../models/Comment.js';
 import { mutateBoard } from './mutateBoard.js';
-import { appendCardPosition } from './positions.js';
+import { appendCardPosition, placeCard } from './positions.js';
 import { findReplay, retryOnDuplicate } from './idempotentCreate.js';
 import { publish } from '../sockets/publisher.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -137,6 +137,26 @@ export async function removeLabel(cardId, boardId, labelId, ctx) {
     card: await updateCard(cardId, boardId, { $pull: { labelIds: labelId } }, session),
   }));
   return updated(boardId, ctx, result);
+}
+
+/**
+ * Drag and drop (docs/03 — Move Semantics). Stale neighbors are ignored, a neighbor on another
+ * board → 400, a missing or archived target list → 404. A needed rebalance happens in the same
+ * transaction and rides along in the same event.
+ */
+export async function moveCard(cardId, boardId, { toListId, beforeId, afterId }, ctx) {
+  const result = await mutateBoard(boardId, async (session) => {
+    const toList = await List.findOne({ _id: toListId, boardId, archived: false }).session(session).lean();
+    if (!toList) throw new ApiError(404, 'NOT_FOUND');
+    const prev = await Card.findOne({ _id: cardId, boardId, archived: false }).session(session).lean();
+    if (!prev) throw new ApiError(404, 'NOT_FOUND');
+    const { position, rebalanced } = await placeCard({ boardId, cardId, toListId, beforeId, afterId }, session);
+    const card = await updateCard(cardId, boardId, { $set: { listId: toListId, position } }, session);
+    return { card, fromListId: String(prev.listId), rebalanced };
+  });
+  const { card, fromListId, rebalanced, revision } = result;
+  publish(boardId, EVT.CARD_MOVED, { card, fromListId, rebalanced, ...meta(ctx, revision) });
+  return { card, fromListId, rebalanced, revision };
 }
 
 /** Also deletes the card's comments. */

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import Markdown from 'react-markdown';
 import toast from 'react-hot-toast';
 import { LIMITS } from '@syncboard/shared/limits';
@@ -7,15 +8,17 @@ import { http } from '../../api/http.js';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { Avatar } from '../../components/ui/Avatar.jsx';
 import { LABEL_HEX, toLocalInput, fromLocalInput } from './cardUtils.js';
+import { selectCard, selectLabels, selectMembers } from './selectors.js';
+import { saveContent, setCardFields, toggleCardRef, deleteCard } from './thunks.js';
 
 /** /b/:boardId/c/:cardId — rendered in the board's <Outlet>. */
 export function CardModalRoute() {
   const { cardId } = useParams();
-  const { board, editable, boardId } = useOutletContext();
+  const { editable, boardId } = useOutletContext();
   const navigate = useNavigate();
   const close = () => navigate(`/b/${boardId}`);
 
-  const fromBoard = board.data.cards.find((c) => c._id === cardId);
+  const fromBoard = useSelector((s) => selectCard(s, cardId));
   // Archived cards aren't in the board snapshot; deep links to them fetch the card (docs/11 F3).
   const [fetched, setFetched] = useState(null);
   useEffect(() => {
@@ -33,35 +36,48 @@ export function CardModalRoute() {
 
   const card = fromBoard ?? fetched;
   if (!card) return null;
-  // Remount (fresh draft) whenever the server version changes.
-  return <CardModal key={`${card._id}:${card.version}`} card={card} board={board} editable={editable} close={close} />;
+  return <CardModal key={card._id} card={card} editable={editable} close={close} />;
 }
 
-function CardModal({ card, board, editable, close }) {
-  const { run, data } = board;
-  const meta = data.board;
+function CardModal({ card, editable, close }) {
+  const dispatch = useDispatch();
+  const labels = useSelector(selectLabels);
+  const members = useSelector(selectMembers);
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description);
   const [editingDesc, setEditingDesc] = useState(false);
   const dirty = title.trim() !== card.title || description !== card.description;
 
-  const saveContent = async () => {
+  // Optimistic: the displayed card updates at once, so the draft is clean again right away.
+  // (Phase 5 replaces this with the draft/draftBase model, autosave, and conflict merging.)
+  const save = () => {
     if (!dirty || !title.trim()) return;
-    const body = { version: card.version };
-    if (title.trim() !== card.title) body.title = title.trim();
-    if (description !== card.description) body.description = description;
-    const res = await run(() => http.patch(`/cards/${card._id}/content`, body), 'Could not save the card');
-    if (res.ok) setEditingDesc(false);
+    const fields = {};
+    if (title.trim() !== card.title) fields.title = title.trim();
+    if (description !== card.description) fields.description = description;
+    dispatch(saveContent(card._id, fields)).then((r) => {
+      // 409: the store now shows the teammate's version; reset the draft to it (Phase 5 merges instead).
+      const current = r.error?.code === 'CONFLICT' && r.error.details?.current;
+      if (current) {
+        setTitle(current.title);
+        setDescription(current.description);
+      }
+    });
+    setEditingDesc(false);
   };
 
-  const setFields = (fields) => run(() => http.patch(`/cards/${card._id}`, fields), 'Could not update the card');
-  const toggle = (kind, id, on) => run(() => (on
-    ? http.del(`/cards/${card._id}/${kind}/${id}`)
-    : http.post(`/cards/${card._id}/${kind}`, kind === 'labels' ? { labelId: id } : { userId: id })), 'Could not update the card');
-  const remove = async () => {
+  // Archived cards opened by deep link aren't in the board snapshot. Ops still work for them:
+  // with no displayed entity the op is a no-op until confirmed, and the confirmed card enters the store.
+  const setFields = (fields) => dispatch(setCardFields(card._id, fields));
+  const toggle = (kind, id, on) => dispatch(toggleCardRef(card._id, kind, id, on));
+  const remove = () => {
     if (!window.confirm(`Delete card "${card.title}"? This can't be undone.`)) return;
-    const res = await run(() => http.del(`/cards/${card._id}`), 'Could not delete the card');
-    if (res.ok) close();
+    close();
+    dispatch(deleteCard(card._id));
+  };
+  const archive = () => {
+    close();
+    dispatch(setCardFields(card._id, { archived: true }));
   };
 
   return (
@@ -94,7 +110,7 @@ function CardModal({ card, board, editable, close }) {
           )}
           {editable && (
             <div className="card-modal__save">
-              <button className="btn btn--primary" disabled={!dirty || !title.trim()} onClick={saveContent}>Save</button>
+              <button className="btn btn--primary" disabled={!dirty || !title.trim()} onClick={save}>Save</button>
               {dirty && <button className="btn btn--ghost" onClick={() => { setTitle(card.title); setDescription(card.description); setEditingDesc(false); }}>Discard</button>}
               {dirty && <span className="muted">Unsaved changes</span>}
             </div>
@@ -113,7 +129,7 @@ function CardModal({ card, board, editable, close }) {
 
           <h3>Labels</h3>
           <div className="chips">
-            {meta.labels.map((l) => {
+            {labels.map((l) => {
               const on = card.labelIds.includes(l._id);
               return (
                 <button key={l._id} className={`label-chip${on ? ' label-chip--on' : ''}`} disabled={!editable}
@@ -126,7 +142,7 @@ function CardModal({ card, board, editable, close }) {
 
           <h3>Assignees</h3>
           <div className="chips">
-            {meta.members.map((m) => {
+            {members.map((m) => {
               const on = card.assigneeIds.includes(m.userId);
               return (
                 <button key={m.userId} className={`member-chip${on ? ' member-chip--on' : ''}`} disabled={!editable}
@@ -139,7 +155,7 @@ function CardModal({ card, board, editable, close }) {
 
           {editable && !card.archived && (
             <div className="card-modal__danger">
-              <button className="btn" onClick={() => setFields({ archived: true }).then(() => close())}>Archive</button>
+              <button className="btn" onClick={archive}>Archive</button>
               <button className="btn btn--danger" onClick={remove}>Delete</button>
             </div>
           )}

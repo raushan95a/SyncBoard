@@ -55,6 +55,17 @@ export const cardFieldsSchema = z.strictObject({
 }).refine((b) => b.completed !== undefined || b.dueDate !== undefined || b.archived !== undefined, 'Nothing to update');
 export const cardAssigneeSchema = z.strictObject({ userId: objectId, clientMutationId });
 export const cardLabelSchema = z.strictObject({ labelId: objectId, clientMutationId });
+/**
+ * Moves (docs/03 — Move Semantics). beforeId = the item ABOVE the drop point, afterId = the
+ * item BELOW it, as the user saw the list. Either may be null/omitted (start/end).
+ */
+const neighbors = {
+  beforeId: objectId.nullable().optional(),
+  afterId: objectId.nullable().optional(),
+  clientMutationId,
+};
+export const moveCardSchema = z.strictObject({ toListId: objectId, ...neighbors });
+export const moveListSchema = z.strictObject(neighbors);
 /** For body-less DELETEs that still want to pass a clientMutationId via the query string. */
 export const mutationQuery = z.strictObject({ clientMutationId });
 

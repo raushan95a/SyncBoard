@@ -22,6 +22,7 @@ export const deleteBoard = async (req, res) => res.json({ data: await boards.del
 // ---- lists
 export const createList = async (req, res) => created(req, res, await lists.createList(req.boardId, req.valid.body, ctx(req)));
 export const updateList = async (req, res) => send(req, res, await lists.updateList(req.list._id, req.boardId, req.valid.body, ctx(req)));
+export const moveList = async (req, res) => send(req, res, await lists.moveList(req.list._id, req.boardId, req.valid.body, ctx(req)));
 export const deleteList = async (req, res) => send(req, res, await lists.deleteList(req.list._id, req.boardId, ctx(req)));
 
 // ---- cards
@@ -33,4 +34,5 @@ export const addAssignee = async (req, res) => send(req, res, await cards.addAss
 export const removeAssignee = async (req, res) => send(req, res, await cards.removeAssignee(req.card._id, req.boardId, req.valid.params.userId, ctx(req)));
 export const addLabel = async (req, res) => send(req, res, await cards.addLabel(req.card._id, req.boardId, req.valid.body.labelId, ctx(req)));
 export const removeLabel = async (req, res) => send(req, res, await cards.removeLabel(req.card._id, req.boardId, req.valid.params.labelId, ctx(req)));
+export const moveCard = async (req, res) => send(req, res, await cards.moveCard(req.card._id, req.boardId, req.valid.body, ctx(req)));
 export const deleteCard = async (req, res) => send(req, res, await cards.deleteCard(req.card._id, req.boardId, ctx(req)));

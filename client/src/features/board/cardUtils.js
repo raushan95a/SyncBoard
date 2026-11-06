@@ -33,10 +33,3 @@ export function toLocalInput(iso) {
 
 /** <input type="datetime-local"> value (local time) → ISO (UTC), or null when cleared. */
 export const fromLocalInput = (value) => (value ? new Date(value).toISOString() : null);
-
-/** Group cards by list (cards arrive sorted by position, _id from the server). */
-export function cardsByList(cards) {
-  const map = {};
-  for (const c of cards) (map[c.listId] ??= []).push(c);
-  return map;
-}
