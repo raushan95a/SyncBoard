@@ -15,8 +15,13 @@ describe('GET /api/healthz', () => {
 
 describe('error handling', () => {
   it('returns the standard error shape for unknown routes', async () => {
-    const res = await request(app).get('/api/nope').expect(404);
+    const res = await request(app).get('/nope').expect(404);
     expect(res.body.error.code).toBe('NOT_FOUND');
+  });
+
+  it('answers 401 (not 404) for unknown /api routes without a session', async () => {
+    const res = await request(app).get('/api/nope').expect(401);
+    expect(res.body.error.code).toBe('UNAUTHENTICATED');
   });
 
   it('rejects malformed JSON with 400', async () => {

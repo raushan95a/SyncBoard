@@ -6,6 +6,7 @@ process.env.NODE_ENV = 'test';
 process.env.MONGO_URI = inject('mongoUri');
 process.env.MONGO_DB = 'collabboard-test';
 process.env.JWT_SECRET = 'test-secret-'.padEnd(64, 'x');
+process.env.BCRYPT_COST = '4';
 
 if (process.env.MONGO_URI.startsWith('mongodb+srv://')) {
   throw new Error('Refusing to run tests against Atlas.');

@@ -9,6 +9,7 @@ const schema = z.object({
   MONGO_DB: z.string().min(1).default('collabboard-dev'),
   JWT_SECRET: z.string().min(64, 'JWT_SECRET must be at least 64 characters'),
   JWT_EXPIRES_IN: z.string().default('7d'),
+  BCRYPT_COST: z.coerce.number().int().min(4).max(15).default(12),   // tests use 4 for speed
   REDIS_URL: z.preprocess(emptyToUndefined, z.url().optional()),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });

@@ -8,25 +8,25 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 
 ## Phase 0 — Setup (½ day)
 
-- [ ] `git init`, a root `package.json` with `"workspaces": ["client", "server", "shared"]`, `"type": "module"`, `"engines": { "node": ">=24" }`, `.nvmrc` (24), `.gitignore`, `.editorconfig`
-- [ ] **server:** `express@5 mongoose@9 socket.io helmet cookie-parser cookie jsonwebtoken bcryptjs zod express-rate-limit fractional-indexing dotenv pino pino-http`
-- [ ] **server (dev):** `vitest supertest mongodb-memory-server socket.io-client`
-- [ ] **client:** Vite React template, plus `@reduxjs/toolkit react-redux react-router-dom socket.io-client @hello-pangea/dnd nanoid bson-objectid react-hot-toast react-markdown` (verified: `@hello-pangea/dnd@18` peer-depends on `react ^18 || ^19`)
-- [ ] **shared:** `fractional-indexing zod`. Export `events.js`, `position.js`, `roles.js`, `limits.js`, `schemas/`
-- [ ] Root scripts: `dev` (both apps via `concurrently`), `test`, `lint`
-- [ ] Vite proxy for `/api` and `/socket.io` (`ws: true`)
-- [ ] MongoDB Atlas M0 cluster; `MONGO_URI` (`mongodb+srv://…`) and `MONGO_DB=collabboard-dev` in `server/.env` (git-ignored), with a committed `server/.env.example`
-- [ ] `config/env.js` (Zod), `config/db.js` (connect with `dbName: env.MONGO_DB`), `GET /api/healthz`
-- [ ] Test harness: `MongoMemoryReplSet` in a Vitest global setup, so tests never touch Atlas
-- [ ] **Done when:** `npm run dev` shows a React page displaying `healthz: ok` (db up), `npm test` passes against the in-memory replica set, and `npm run db:check -w server` runs a test transaction against Atlas
+- [x] `git init`, a root `package.json` with `"workspaces": ["client", "server", "shared"]`, `"type": "module"`, `"engines": { "node": ">=24" }`, `.nvmrc` (24), `.gitignore`, `.editorconfig`
+- [x] **server:** `express@5 mongoose@9 socket.io helmet cookie-parser cookie jsonwebtoken bcryptjs zod express-rate-limit fractional-indexing dotenv pino pino-http`
+- [x] **server (dev):** `vitest supertest mongodb-memory-server socket.io-client`
+- [x] **client:** Vite React template, plus `@reduxjs/toolkit react-redux react-router-dom socket.io-client @hello-pangea/dnd nanoid bson-objectid react-hot-toast react-markdown` (verified: `@hello-pangea/dnd@18` peer-depends on `react ^18 || ^19`)
+- [x] **shared:** `fractional-indexing zod`. Export `events.js`, `position.js`, `roles.js`, `limits.js`, `schemas/`
+- [x] Root scripts: `dev` (both apps via `concurrently`), `test`, `lint`
+- [x] Vite proxy for `/api` and `/socket.io` (`ws: true`)
+- [x] MongoDB Atlas M0 cluster; `MONGO_URI` (`mongodb+srv://…`) and `MONGO_DB=collabboard-dev` in `server/.env` (git-ignored), with a committed `server/.env.example`
+- [x] `config/env.js` (Zod), `config/db.js` (connect with `dbName: env.MONGO_DB`), `GET /api/healthz`
+- [x] Test harness: `MongoMemoryReplSet` in a Vitest global setup, so tests never touch Atlas
+- [x] **Done when:** `npm run dev` shows a React page displaying `healthz: ok` (db up), `npm test` passes against the in-memory replica set, and `npm run db:check -w server` runs a test transaction against Atlas
 
 ## Phase 1 — Auth (1 day) · F1
 
-- [ ] User model, register/login/logout(`everywhere`)/me, `tokenVersion`
-- [ ] bcryptjs, JWT cookie, `auth` middleware, `ApiError`, error handler, `validate()`
-- [ ] Client: login and register pages (shared schemas), `authSlice`, `ProtectedRoute`, boot check with `/auth/me`, the http wrapper's 401 → logout rule
-- [ ] **Tests:** register → me → logout → 401; generic login error; duplicate email; a revoked `tokenVersion` → 401
-- [ ] **Done when:** a refresh keeps you logged in; logout everywhere logs out a second browser
+- [x] User model, register/login/logout(`everywhere`)/me, `tokenVersion`
+- [x] bcryptjs, JWT cookie, `auth` middleware, `ApiError`, error handler, `validate()`
+- [x] Client: login and register pages (shared schemas), `authSlice`, `ProtectedRoute`, boot check with `/auth/me`, the http wrapper's 401 → logout rule
+- [x] **Tests:** register → me → logout → 401; generic login error; duplicate email; a revoked `tokenVersion` → 401
+- [x] **Done when:** a refresh keeps you logged in; logout everywhere logs out a second browser
 
 ## Phase 2 — Core Data and CRUD, no realtime yet (2–3 days) · F2, F4, F5, F7, F8
 
