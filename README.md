@@ -101,7 +101,9 @@ docker compose up --build                     # http://localhost:4000
 docker compose --profile scale up --build     # 2 instances + Redis adapter + nginx (sticky) on :8080
 ```
 
-Hosts with WebSocket support (Render, Railway, Fly.io) run the image as-is, with `MONGO_URI`, `MONGO_DB=collabboard-prod`, and `JWT_SECRET` set as secrets. See [docs/08](docs/08-TESTING-DEPLOYMENT.md#deployment-same-origin) for the production checklist. CI (`.github/workflows/ci.yml`) runs lint, all tests, the E2E suite, and `npm audit` on every push.
+**Render** (`render.yaml`): New → Blueprint → this repo, then set `MONGO_URI` (an Atlas user with `readWrite` on `collabboard-prod` only) and `JWT_SECRET` (64+ random characters). Render's free tier has no static outbound IP, so the Atlas network list needs `0.0.0.0/0` there; rely on the dedicated, least-privilege database user.
+
+Other hosts with WebSocket support (Railway, Fly.io) run the image as-is, with `MONGO_URI`, `MONGO_DB=collabboard-prod`, and `JWT_SECRET` set as secrets. See [docs/08](docs/08-TESTING-DEPLOYMENT.md#deployment-same-origin) for the production checklist. CI (`.github/workflows/ci.yml`) runs lint, all tests, the E2E suite, and `npm audit` on every push.
 
 ## Repository layout
 

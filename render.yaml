@@ -1,0 +1,22 @@
+# Render Blueprint (docs/08 — Deployment). One Docker web service = API + built client on one origin.
+# Render: New → Blueprint → pick this repo. Then set the two secrets below in the dashboard.
+services:
+  - type: web
+    name: syncboard
+    runtime: docker
+    plan: free                      # sleeps when idle; the first request after that takes ~30-60 s
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_DB
+        value: collabboard-prod
+      # Atlas connection string for a prod-only user (readWrite on collabboard-prod).
+      - key: MONGO_URI
+        sync: false
+      # At least 64 characters (validated at startup). Render's generateValue makes only 44, so set it yourself:
+      #   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+      - key: JWT_SECRET
+        sync: false
