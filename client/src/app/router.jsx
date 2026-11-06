@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate, Link } from 'react-router-dom';
 import { RequireAuth, PublicOnly } from '../features/auth/guards.jsx';
 import { LoginPage, RegisterPage } from '../features/auth/AuthPages.jsx';
 import { BoardsPage } from '../features/boards/BoardsPage.jsx';
+import { BoardRoute } from '../features/board/BoardPage.jsx';
+import { CardModalRoute } from '../features/board/CardModal.jsx';
 
 function NotFound() {
   return (
@@ -27,7 +29,11 @@ export const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       { path: '/boards', element: <BoardsPage /> },
-      // Phase 2+: /b/:boardId, /b/:boardId/c/:cardId
+      {
+        path: '/b/:boardId',
+        element: <BoardRoute />,
+        children: [{ path: 'c/:cardId', element: <CardModalRoute /> }],   // modal over the board
+      },
     ],
   },
   { path: '*', element: <NotFound /> },

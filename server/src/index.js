@@ -3,10 +3,16 @@ import { env } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { createApp } from './app.js';
 import { logger } from './utils/logger.js';
+import { sweepOrphans } from './services/orphanSweep.js';
 
 async function main() {
   await connectDB(env.MONGO_URI, env.MONGO_DB);
   logger.info({ db: env.MONGO_DB }, 'connected to MongoDB');
+
+  // Clean up children of boards whose batched delete was interrupted (ADR-019). Not awaited.
+  sweepOrphans()
+    .then((n) => n && logger.warn({ boards: n }, 'orphan sweep removed leftovers'))
+    .catch((err) => logger.error({ err }, 'orphan sweep failed'));
 
   const server = http.createServer(createApp());
   // Socket.io attaches to this server in Phase 4.

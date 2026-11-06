@@ -7,6 +7,7 @@ import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
 import { healthRouter } from './routes/health.js';
 import { authRouter } from './routes/auth.js';
+import { apiRouter } from './routes/api.js';
 import { auth } from './middleware/auth.js';
 import { requireJson } from './middleware/requireJson.js';
 import { userLimiter } from './middleware/rateLimit.js';
@@ -39,8 +40,7 @@ export function createApp() {
   app.use('/api/auth', authRouter);
 
   // Everything below requires a session.
-  app.use('/api', auth, userLimiter);
-  // Phase 2: boards, lists, cards, comments routers mount here.
+  app.use('/api', auth, userLimiter, apiRouter);
 
   app.use(notFound);
   app.use(errorHandler);

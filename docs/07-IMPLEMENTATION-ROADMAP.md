@@ -30,17 +30,17 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 
 ## Phase 2 — Core Data and CRUD, no realtime yet (2–3 days) · F2, F4, F5, F7, F8
 
-- [ ] Models with limits and indexes ([02](02-DATABASE-SCHEMA.md)), including the board `labels` default palette
-- [ ] **`mutateBoard()`**: every mutation goes through it from day one, even before sockets exist
-- [ ] `loadResource` + `requireRole` middleware
-- [ ] Boards: list, create (basic or empty template), rename, delete (cascade)
-- [ ] Lists and cards: create with optional client `_id` (idempotent), rename or update, delete (cascade)
-- [ ] `PATCH /cards/:id/content` compare-and-set; `PATCH /cards/:id` last-write-wins; assignee and label add/remove
-- [ ] `GET /boards/:id` (board first, then children)
-- [ ] Orphan sweep on startup ([02](02-DATABASE-SCHEMA.md#cascades-all-within-mutateboard-one-event-each))
-- [ ] Client, **kept minimal** (ADR-023): boards page, board view, add list/card forms, card modal (basic save, no conflict UI), label chips, due-date chip. Every change is a plain request followed by a **refetch** of the board. No optimistic state yet; Phase 3 replaces this with the ops engine.
-- [ ] **Tests:** the authorization matrix (non-member → 404, viewer → 403 on every mutation route); stale version → 409 with `current`; `completed` doesn't bump `version`; a repeated create with the same `_id` → 200
-- [ ] **Done when:** you can build a full board in the UI and it persists
+- [x] Models with limits and indexes ([02](02-DATABASE-SCHEMA.md)), including the board `labels` default palette
+- [x] **`mutateBoard()`**: every mutation goes through it from day one, even before sockets exist
+- [x] `loadResource` + `requireRole` middleware
+- [x] Boards: list, create (basic or empty template), rename, delete (cascade)
+- [x] Lists and cards: create with optional client `_id` (idempotent), rename or update, delete (cascade)
+- [x] `PATCH /cards/:id/content` compare-and-set; `PATCH /cards/:id` last-write-wins; assignee and label add/remove
+- [x] `GET /boards/:id` (board first, then children)
+- [x] Orphan sweep on startup ([02](02-DATABASE-SCHEMA.md#cascades-all-within-mutateboard-one-event-each))
+- [x] Client, **kept minimal** (ADR-023): boards page, board view, add list/card forms, card modal (basic save, no conflict UI), label chips, due-date chip. Every change is a plain request followed by a **refetch** of the board. No optimistic state yet; Phase 3 replaces this with the ops engine.
+- [x] **Tests:** the authorization matrix (non-member → 404, viewer → 403 on every mutation route); stale version → 409 with `current`; `completed` doesn't bump `version`; a repeated create with the same `_id` → 200
+- [x] **Done when:** you can build a full board in the UI and it persists
 
 ## Phase 3 — Drag & Drop + Pending-Ops Engine (2–3 days) · F6
 
