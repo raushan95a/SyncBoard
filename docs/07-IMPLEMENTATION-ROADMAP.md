@@ -103,7 +103,7 @@ Commit using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`) and tag ea
 - [ ] Security checklist ([06](06-SECURITY-AUTH.md)) *(code-side items done; HTTPS and the Atlas allowlist/users depend on the deploy)*
 - [x] Playwright: two-user sync, the concurrency matrix's key cells ([11](11-FEATURE-WORKFLOWS.md#concurrency-matrix)), reconnect after a server restart, member removal
 - [ ] Redis adapter and a two-instance test behind nginx *(adapter + compose/nginx written; the two-instance run needs Docker)*
-- [ ] Single-origin Docker image, CI, deploy (Render/Railway/Fly + Atlas) *(Dockerfile + CI written; runtime stage simulated without Docker; image build, CI run, and deploy pending)*
+- [ ] Single-origin Docker image, CI, deploy (Render/Railway/Fly + Atlas) *(CI green on GitHub Actions incl. Playwright; Dockerfile written, runtime stage simulated without Docker; image build and Render deploy pending)*
 - [x] Artillery load test; record p95 propagation *(purpose-built script instead, ADR-026; numbers in [08](08-TESTING-DEPLOYMENT.md))*
 - [ ] README: GIF demo, architecture diagram, trade-offs (from [10](10-DECISION-LOG.md)), measured numbers, live link *(written; GIF and live link pending)*
 
